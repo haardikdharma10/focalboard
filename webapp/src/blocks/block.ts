@@ -2,7 +2,10 @@
 // See LICENSE.txt for license information.
 import {Utils} from '../utils'
 
-type BlockTypes = 'board' | 'view' | 'card' | 'text' | 'image' | 'divider' | 'comment'
+const contentBlockTypes = ['text', 'image', 'divider'] as const
+const blockTypes = [...contentBlockTypes, 'board', 'view', 'card', 'comment'] as const
+type ContentBlockTypes = typeof contentBlockTypes[number]
+type BlockTypes = typeof blockTypes[number]
 
 interface IBlock {
     readonly id: string
@@ -49,18 +52,6 @@ class MutableBlock implements IMutableBlock {
     updateAt = 0
     deleteAt = 0
 
-    static duplicate(block: IBlock): IMutableBlock {
-        const now = Date.now()
-
-        const newBlock = new MutableBlock(block)
-        newBlock.id = Utils.createGuid()
-        newBlock.createAt = now
-        newBlock.updateAt = now
-        newBlock.deleteAt = 0
-
-        return newBlock
-    }
-
     constructor(block: any = {}) {
         this.id = block.id || Utils.createGuid()
         this.schema = 1
@@ -81,4 +72,5 @@ class MutableBlock implements IMutableBlock {
     }
 }
 
-export {IBlock, IMutableBlock, MutableBlock}
+export type {ContentBlockTypes, BlockTypes}
+export {blockTypes, contentBlockTypes, IBlock, IMutableBlock, MutableBlock}

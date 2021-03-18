@@ -1,4 +1,4 @@
-.PHONY: prebuild clean cleanall ci server server-mac server-linux server-win server-linux-package generate watch-server webapp mac-app win-app linux-app
+.PHONY: prebuild clean cleanall ci server server-mac server-linux server-win server-linux-package generate watch-server webapp mac-app win-app-wpf linux-app
 
 PACKAGE_FOLDER = focalboard
 
@@ -15,7 +15,7 @@ LDFLAGS += -X "github.com/mattermost/focalboard/server/model.BuildNumber=$(BUILD
 LDFLAGS += -X "github.com/mattermost/focalboard/server/model.BuildDate=$(BUILD_DATE)"
 LDFLAGS += -X "github.com/mattermost/focalboard/server/model.BuildHash=$(BUILD_HASH)"
 
-all: server
+all: webapp server
 
 prebuild:
 	cd webapp; npm install
@@ -43,6 +43,10 @@ server-win:
 	$(eval LDFLAGS += -X "github.com/mattermost/focalboard/server/model.Edition=win")
 	cd server; env GOOS=windows GOARCH=amd64 go build -ldflags '$(LDFLAGS)' -o ../bin/win/focalboard-server.exe ./main
 
+server-dll:
+	$(eval LDFLAGS += -X "github.com/mattermost/focalboard/server/model.Edition=win")
+	cd server; env GOOS=windows GOARCH=amd64 go build -ldflags '$(LDFLAGS)' -buildmode=c-shared -o ../bin/win-dll/focalboard-server.dll ./main
+
 server-linux-package: server-linux webapp
 	rm -rf package
 	mkdir -p package/${PACKAGE_FOLDER}/bin
@@ -56,24 +60,6 @@ server-linux-package: server-linux webapp
 	cd package && tar -czvf ../dist/focalboard-server-linux-amd64.tar.gz ${PACKAGE_FOLDER}
 	rm -rf package
 
-server-single-user:
-	$(eval LDFLAGS += -X "github.com/mattermost/focalboard/server/model.Edition=dev")
-	cd server; go build -ldflags '$(LDFLAGS)' -o ../bin/focalboard-server ./main --single-user
-
-server-mac-single-user:
-	mkdir -p bin/mac
-	$(eval LDFLAGS += -X "github.com/mattermost/focalboard/server/model.Edition=mac")
-	cd server; env GOOS=darwin GOARCH=amd64 go build -ldflags '$(LDFLAGS)' -o ../bin/mac/focalboard-server ./main --single-user
-
-server-linux-single-user:
-	mkdir -p bin/linux
-	$(eval LDFLAGS += -X "github.com/mattermost/focalboard/server/model.Edition=linux")
-	cd server; env GOOS=linux GOARCH=amd64 go build -ldflags '$(LDFLAGS)' -o ../bin/linux/focalboard-server ./main --single-user
-
-server-win-single-user:
-	$(eval LDFLAGS += -X "github.com/mattermost/focalboard/server/model.Edition=win")
-	cd server; env GOOS=windows GOARCH=amd64 go build -ldflags '$(LDFLAGS)' -o ../bin/focalboard-server.exe ./main --single-user
-
 generate:
 	cd server; go get -modfile=go.tools.mod github.com/golang/mock/mockgen
 	cd server; go get -modfile=go.tools.mod github.com/jteeuwen/go-bindata
@@ -81,9 +67,9 @@ generate:
 
 server-lint:
 	@if ! [ -x "$$(command -v golangci-lint)" ]; then \
-        echo "golangci-lint is not installed. Please see https://github.com/golangci/golangci-lint#install for installation instructions."; \
-        exit 1; \
-    fi; \
+		echo "golangci-lint is not installed. Please see https://github.com/golangci/golangci-lint#install for installation instructions."; \
+		exit 1; \
+	fi; \
 	cd server; golangci-lint run -p format -p unused -p complexity -p bugs -p performance -E asciicheck -E depguard -E dogsled -E dupl -E funlen -E gochecknoglobals -E gochecknoinits -E goconst -E gocritic -E godot -E godox -E goerr113 -E goheader -E golint -E gomnd -E gomodguard -E goprintffuncname -E gosimple -E interfacer -E lll -E misspell -E nlreturn -E nolintlint -E stylecheck -E unconvert -E whitespace -E wsl --skip-dirs services/store/sqlstore/migrations/ ./...
 
 server-test:
@@ -120,20 +106,8 @@ mac-app: server-mac webapp
 	cp webapp/NOTICE.txt mac/dist/webapp-NOTICE.txt
 	cd mac/dist; zip -r focalboard-mac.zip Focalboard.app MIT-COMPILED-LICENSE.md NOTICE.txt webapp-NOTICE.txt
 
-win-app: server-win webapp
-	rm -rf win/temp
-	rm -rf win/dist
-	cd win; make build
-	mkdir -p win/temp
-	cp bin/win/focalboard-server.exe win/temp
-	cp app-config.json win/temp/config.json
-	cp build/MIT-COMPILED-LICENSE.md win/temp
-	cp NOTICE.txt win/temp
-	cp webapp/NOTICE.txt win/temp/webapp-NOTICE.txt
-	cp -R webapp/pack win/temp/pack
-	mkdir -p win/dist
-	# cd win/temp; tar -acf ../dist/focalboard-win.zip .
-	cd win/temp; powershell "Compress-Archive * ../dist/focalboard-win.zip"
+win-wpf-app: server-dll webapp
+	cd win-wpf && ./build.bat && ./package.bat
 
 linux-app: server-linux webapp
 	rm -rf linux/temp
@@ -151,6 +125,18 @@ linux-app: server-linux webapp
 	cd linux/temp; tar -zcf ../dist/focalboard-linux.tar.gz focalboard-app
 	rm -rf linux/temp
 
+swagger:
+	mkdir -p server/swagger/docs
+	mkdir -p server/swagger/clients
+	cd server && swagger generate spec -m -o ./swagger/swagger.yml
+
+	cd server/swagger && openapi-generator generate -i swagger.yml -g html2 -o docs/html
+	cd server/swagger && openapi-generator generate -i swagger.yml -g go -o clients/go
+	cd server/swagger && openapi-generator generate -i swagger.yml -g javascript -o clients/javascript
+	cd server/swagger && openapi-generator generate -i swagger.yml -g typescript-fetch -o clients/typescript
+	cd server/swagger && openapi-generator generate -i swagger.yml -g swift5 -o clients/swift
+	cd server/swagger && openapi-generator generate -i swagger.yml -g python -o clients/python
+
 clean:
 	rm -rf bin
 	rm -rf dist
@@ -158,7 +144,8 @@ clean:
 	rm -rf mac/temp
 	rm -rf mac/dist
 	rm -rf linux/dist
-	rm -rf win/dist
+	rm -rf win-wpf/msix
+	rm win-wpf/focalboard.msix
 
 cleanall: clean
 	rm -rf webapp/node_modules

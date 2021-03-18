@@ -33,8 +33,20 @@ class BoardPage extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
         const queryString = new URLSearchParams(window.location.search)
-        const boardId = queryString.get('id') || ''
-        const viewId = queryString.get('v') || ''
+        let boardId = queryString.get('id') || ''
+        let viewId = queryString.get('v') || ''
+
+        if (!boardId) {
+            // Load last viewed boardView
+            boardId = localStorage.getItem('lastBoardId') || ''
+            viewId = localStorage.getItem('lastViewId') || ''
+            if (boardId) {
+                Utils.replaceUrlQueryParam('id', boardId)
+            }
+            if (viewId) {
+                Utils.replaceUrlQueryParam('v', viewId)
+            }
+        }
 
         this.state = {
             boardId,
@@ -166,6 +178,9 @@ class BoardPage extends React.Component<Props, State> {
 
     private async attachToBoard(boardId?: string, viewId = '') {
         Utils.log(`attachToBoard: ${boardId}`)
+        localStorage.setItem('lastBoardId', boardId || '')
+        localStorage.setItem('lastViewId', viewId)
+
         if (boardId) {
             this.sync(boardId, viewId)
         } else {
@@ -276,20 +291,17 @@ class BoardPage extends React.Component<Props, State> {
             return
         }
 
-        let newUrl = window.location.protocol + '//' + window.location.host + window.location.pathname
-        if (boardId) {
-            newUrl += `?id=${encodeURIComponent(boardId)}`
-
-            if (this.props.readonly) {
-                newUrl += '&r=1'
-            }
-        }
-        window.history.pushState({path: newUrl}, '', newUrl)
+        const newUrl = new URL(window.location.toString())
+        newUrl.searchParams.set('id', boardId || '')
+        newUrl.searchParams.set('v', '')
+        window.history.pushState({path: newUrl.toString()}, '', newUrl.toString())
 
         this.attachToBoard(boardId)
     }
 
     showView(viewId: string, boardId: string = this.state.boardId): void {
+        localStorage.setItem('lastViewId', viewId)
+
         if (this.state.boardTree && this.state.boardId === boardId) {
             const newBoardTree = this.state.boardTree.copyWithView(viewId)
             this.setState({boardTree: newBoardTree, viewId})
@@ -297,11 +309,10 @@ class BoardPage extends React.Component<Props, State> {
             this.attachToBoard(boardId, viewId)
         }
 
-        let newUrl = window.location.protocol + '//' + window.location.host + window.location.pathname + `?id=${encodeURIComponent(boardId)}&v=${encodeURIComponent(viewId)}`
-        if (this.props.readonly) {
-            newUrl += '&r=1'
-        }
-        window.history.pushState({path: newUrl}, '', newUrl)
+        const newUrl = new URL(window.location.toString())
+        newUrl.searchParams.set('id', boardId)
+        newUrl.searchParams.set('v', viewId)
+        window.history.pushState({path: newUrl.toString()}, '', newUrl.toString())
     }
 
     setSearchText(text?: string): void {

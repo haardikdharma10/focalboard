@@ -17,9 +17,10 @@ Popular hosted options include:
 
 ## Install Focalboard
 
-[Download the Ubuntu archive package here](/download), then unpack it to /opt/focalboard:
+[Download the Ubuntu archive package](https://releases.mattermost.com/focalboard/0.5.0/focalboard-server-linux-amd64.tar.gz), then unpack it to /opt/focalboard:
 
 ```
+wget https://releases.mattermost.com/focalboard/0.5.0/focalboard-server-linux-amd64.tar.gz
 tar -xvzf focalboard-server-linux-amd64.tar.gz
 sudo mv focalboard /opt
 ```
@@ -99,7 +100,7 @@ server {
 
 Enable the site, test the config, and reload NGINX:
 ```
-sudo ln -s /etc/nginx/sites-enabled/focalboard /etc/nginx/sites-available/focalboard
+sudo ln -s /etc/nginx/sites-available/focalboard /etc/nginx/sites-enabled/focalboard
 sudo nginx -t
 sudo /etc/init.d/nginx reload
 ```
@@ -142,6 +143,7 @@ nano /opt/focalboard/config.json
 
 Change the dbconfig setting to use the postgres database you created:
 ```
+"dbtype": "postgres",
 "dbconfig": "postgres://boardsuser:boardsuser-password@localhost/boards?sslmode=disable&connect_timeout=10",
 ```
 

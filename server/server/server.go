@@ -5,14 +5,13 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"os/signal"
 	"runtime"
-	"sync"
 	"syscall"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"github.com/mattermost/focalboard/server/api"
@@ -28,11 +27,9 @@ import (
 	"github.com/mattermost/focalboard/server/services/webhook"
 	"github.com/mattermost/focalboard/server/web"
 	"github.com/mattermost/focalboard/server/ws"
-	"github.com/mattermost/mattermost-server/utils"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/services/filesstore"
-
-	"github.com/pkg/errors"
+	"github.com/mattermost/mattermost-server/v5/utils"
 )
 
 type Server struct {
@@ -49,7 +46,7 @@ type Server struct {
 	localModeServer *http.Server
 }
 
-func New(cfg *config.Configuration, singleUser bool) (*Server, error) {
+func New(cfg *config.Configuration, singleUserToken string) (*Server, error) {
 	logger, err := zap.NewProduction()
 	if err != nil {
 		return nil, err
@@ -63,7 +60,7 @@ func New(cfg *config.Configuration, singleUser bool) (*Server, error) {
 
 	auth := auth.New(cfg, store)
 
-	wsServer := ws.NewServer(auth, singleUser)
+	wsServer := ws.NewServer(auth, singleUserToken)
 
 	filesBackendSettings := model.FileSettings{}
 	filesBackendSettings.SetDefaults(false)
@@ -78,7 +75,7 @@ func New(cfg *config.Configuration, singleUser bool) (*Server, error) {
 	webhookClient := webhook.NewClient(cfg)
 
 	appBuilder := func() *app.App { return app.New(cfg, store, auth, wsServer, filesBackend, webhookClient) }
-	api := api.NewAPI(appBuilder, singleUser)
+	api := api.NewAPI(appBuilder, singleUserToken)
 
 	// Local router for admin APIs
 	localRouter := mux.NewRouter()
@@ -90,21 +87,6 @@ func New(cfg *config.Configuration, singleUser bool) (*Server, error) {
 	webServer := web.NewServer(cfg.WebPath, cfg.Port, cfg.UseSSL, cfg.LocalOnly)
 	webServer.AddRoutes(wsServer)
 	webServer.AddRoutes(api)
-
-	// Ctrl+C handling
-	handler := make(chan os.Signal, 1)
-	signal.Notify(handler, os.Interrupt)
-
-	go func() {
-		for sig := range handler {
-			// sig is a ^C, handle it
-			if sig == os.Interrupt {
-				os.Exit(1)
-
-				break
-			}
-		}
-	}()
 
 	// Init telemetry
 	settings, err := store.GetSystemSettings()
@@ -157,7 +139,7 @@ func New(cfg *config.Configuration, singleUser bool) (*Server, error) {
 			"port":        cfg.Port == config.DefaultPort,
 			"useSSL":      cfg.UseSSL,
 			"dbType":      cfg.DBType,
-			"single_user": singleUser,
+			"single_user": len(singleUserToken) > 0,
 		}
 	})
 	telemetryService.RegisterTracker("activity", func() map[string]interface{} {
@@ -182,10 +164,9 @@ func New(cfg *config.Configuration, singleUser bool) (*Server, error) {
 }
 
 func (s *Server) Start() error {
-	httpServerExitDone := &sync.WaitGroup{}
-	httpServerExitDone.Add(1)
+	s.logger.Info("Server.Start")
 
-	s.webServer.Start(httpServerExitDone)
+	s.webServer.Start()
 
 	if s.config.EnableLocalMode {
 		if err := s.startLocalModeServer(); err != nil {
@@ -208,8 +189,6 @@ func (s *Server) Start() error {
 		s.telemetry.RunTelemetryJob(firstRun)
 	}
 
-	httpServerExitDone.Wait()
-
 	return nil
 }
 
@@ -225,6 +204,8 @@ func (s *Server) Shutdown() error {
 	}
 
 	s.telemetry.Shutdown()
+
+	defer s.logger.Info("Server.Shutdown")
 
 	return s.store.Shutdown()
 }

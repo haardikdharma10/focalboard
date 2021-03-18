@@ -9,6 +9,7 @@ class ViewController:
 	WKUIDelegate,
 	WKNavigationDelegate {
 	@IBOutlet var webView: WKWebView!
+	private var refreshWebViewOnLoad = true
 
 	override func viewDidLoad() {
 		super.viewDidLoad()
@@ -17,9 +18,16 @@ class ViewController:
 
 		webView.navigationDelegate = self
 		webView.uiDelegate = self
+		webView.isHidden = true
 
 		clearWebViewCache()
-		loadHomepage()
+
+		// Load the home page if the server was started, otherwise wait until it has
+		let appDelegate = NSApplication.shared.delegate as! AppDelegate
+		if (appDelegate.isServerStarted) {
+			self.updateSessionToken()
+			self.loadHomepage()
+		}
 
 		// Do any additional setup after loading the view.
 		NotificationCenter.default.addObserver(self, selector: #selector(onServerStarted), name: AppDelegate.serverStartedNotification, object: nil)
@@ -40,8 +48,20 @@ class ViewController:
 	@objc func onServerStarted() {
 		NSLog("onServerStarted")
 		DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+			self.updateSessionToken()
 			self.loadHomepage()
 		}
+	}
+
+	private func updateSessionToken() {
+		let appDelegate = NSApplication.shared.delegate as! AppDelegate
+		let script = WKUserScript(
+			source: "localStorage.setItem('sessionId', '\(appDelegate.sessionToken)');",
+			injectionTime: .atDocumentStart,
+			forMainFrameOnly: true
+		)
+		webView.configuration.userContentController.removeAllUserScripts()
+		webView.configuration.userContentController.addUserScript(script)
 	}
 
 	private func loadHomepage() {
@@ -49,6 +69,7 @@ class ViewController:
 		let port = appDelegate.serverPort
 		let url = URL(string: "http://localhost:\(port)/")!
 		let request = URLRequest(url: url)
+		refreshWebViewOnLoad = true
 		webView.load(request)
 	}
 
@@ -143,6 +164,28 @@ class ViewController:
 		NSLog("webView didFinish navigation: \(webView.url?.absoluteString ?? "")")
 		// Disable right-click menu
 		webView.evaluateJavaScript("document.body.setAttribute('oncontextmenu', 'event.preventDefault();');", completionHandler: nil)
+		webView.isHidden = false
+
+		// HACKHACK: Fix WebView initial rendering artifacts
+		if (refreshWebViewOnLoad) {
+			refreshWebViewOnLoad = false
+			DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: {
+				self.refreshWebView()
+			})
+		}
+	}
+
+	// HACKHACK: Fix WebView initial rendering artifacts
+	private func refreshWebView() {
+		let frame = self.webView.frame
+		var frame2 = frame
+		frame2.size.height += 1
+		self.webView.frame = frame2
+		self.webView.frame = frame
+	}
+
+	func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+		webView.isHidden = false
 	}
 
 	func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {

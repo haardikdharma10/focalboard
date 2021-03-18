@@ -274,7 +274,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Comment out codesign for now\n# /usr/bin/codesign --force --sign \"$CODE_SIGN_IDENTITY\" -i \"com.mattermost.FocalboardServer\" --entitlement \"$PROJECT_DIR/Focalboard/Inherit.entitlements\" \"$BUILD_DIR/$CONFIGURATION/$EXECUTABLE_FOLDER_PATH/../Resources/resources/bin/focalboard-server\"\n";
+			shellScript = "# Un-comment this to enable codesign\n# /usr/bin/codesign --force --timestamp --options runtime --sign \"$CODE_SIGN_IDENTITY\" -i \"com.mattermost.focalboardServer\" --entitlement \"$PROJECT_DIR/Focalboard/Inherit.entitlements\" \"$BUILD_DIR/$CONFIGURATION/$EXECUTABLE_FOLDER_PATH/../Resources/resources/bin/focalboard-server\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -453,16 +453,17 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Focalboard/Focalboard.entitlements;
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = UQ8HT4Q2XM;
+				DEVELOPMENT_TEAM = HFP57A3MYB;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = Focalboard/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.mattermost.Focalboard;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mattermost.focalboard;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;
@@ -475,16 +476,17 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Focalboard/Focalboard.entitlements;
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = UQ8HT4Q2XM;
+				DEVELOPMENT_TEAM = HFP57A3MYB;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = Focalboard/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.mattermost.Focalboard;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mattermost.focalboard;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;
@@ -506,7 +508,7 @@
 					"@loader_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
-				PRODUCT_BUNDLE_IDENTIFIER = com.mattermost.FocalboardTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mattermost.focalboardTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Focalboard.app/Contents/MacOS/Focalboard";
@@ -528,7 +530,7 @@
 					"@loader_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
-				PRODUCT_BUNDLE_IDENTIFIER = com.mattermost.FocalboardTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mattermost.focalboardTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Focalboard.app/Contents/MacOS/Focalboard";
@@ -548,7 +550,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.mattermost.FocalboardUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mattermost.focalboardUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TEST_TARGET_NAME = Focalboard;
@@ -568,7 +570,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.mattermost.FocalboardUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mattermost.focalboardUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TEST_TARGET_NAME = Focalboard;

@@ -18,6 +18,10 @@ html, body {
     background: rgb(var(--main-bg));
 }
 
+input, textarea, select, button {
+    font-size: 100%;        /* Normalize */
+}
+
 input, textarea {
     background: rgb(var(--main-bg));
 	color: rgb(var(--body-color));
@@ -40,6 +44,12 @@ body {
 
 a {
 	text-decoration: none;
+    color: var(--link-color);
+
+    &:visited {
+        color: var(--link-visited-color);
+    }
+
     &:hover {
         background-color: rgba(192, 192, 255, 0.2);
     }
@@ -129,7 +139,6 @@ button {
 	text-transform: uppercase;
 	font-weight: 600;
 	font-size: 13px;
-
 }
 
 .octo-spacer {

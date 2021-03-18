@@ -63,9 +63,13 @@ type Client struct {
 	HttpHeader map[string]string
 }
 
-func NewClient(url string) *Client {
+func NewClient(url string, sessionToken string) *Client {
 	url = strings.TrimRight(url, "/")
-	return &Client{url, url + API_URL_SUFFIX, &http.Client{}, map[string]string{}}
+	headers := map[string]string{
+		"X-Requested-With": "XMLHttpRequest",
+		"Authorization":    "Bearer " + sessionToken,
+	}
+	return &Client{url, url + API_URL_SUFFIX, &http.Client{}, headers}
 }
 
 func (c *Client) DoApiGet(url string, etag string) (*http.Response, error) {

@@ -11,23 +11,25 @@ import {Utils} from './utils'
 //
 class OctoClient {
     readonly serverUrl: string
-    token?: string
-    readonly readToken?: string
+    get token(): string {
+        return localStorage.getItem('sessionId') || ''
+    }
+    get readToken(): string {
+        const queryString = new URLSearchParams(window.location.search)
+        const readToken = queryString.get('r') || ''
+        return readToken
+    }
 
-    constructor(
-        serverUrl?: string,
-        token?: string,
-        readToken?: string) {
+    constructor(serverUrl?: string) {
         this.serverUrl = serverUrl || window.location.origin
-        this.token = token
-        this.readToken = readToken
         Utils.log(`OctoClient serverUrl: ${this.serverUrl}`)
     }
 
-    private async getJson(response: Response, defaultValue: any = {}): Promise<any> {
+    private async getJson(response: Response, defaultValue: any): Promise<any> {
         // The server may return null or malformed json
         try {
-            return await response.json()
+            const value = await response.json()
+            return value || defaultValue
         } catch {
             return defaultValue
         }
@@ -45,10 +47,9 @@ class OctoClient {
             return false
         }
 
-        const responseJson = (await this.getJson(response)) as {token?: string}
-        this.token = responseJson.token
-        if (responseJson.token !== '') {
-            localStorage.setItem('sessionId', this.token || '')
+        const responseJson = (await this.getJson(response, {})) as {token?: string}
+        if (responseJson.token) {
+            localStorage.setItem('sessionId', responseJson.token)
             return true
         }
         return false
@@ -66,7 +67,7 @@ class OctoClient {
             headers: this.headers(),
             body,
         })
-        const json = (await this.getJson(response))
+        const json = (await this.getJson(response, {}))
         return {code: response.status, json}
     }
 
@@ -78,7 +79,7 @@ class OctoClient {
             headers: this.headers(),
             body,
         })
-        const json = (await this.getJson(response))
+        const json = (await this.getJson(response, {}))
         return {code: response.status, json}
     }
 
@@ -87,6 +88,7 @@ class OctoClient {
             Accept: 'application/json',
             'Content-Type': 'application/json',
             Authorization: this.token ? 'Bearer ' + this.token : '',
+            'X-Requested-With': 'XMLHttpRequest',
         }
     }
 
@@ -96,7 +98,7 @@ class OctoClient {
         if (response.status !== 200) {
             return undefined
         }
-        const user = (await this.getJson(response)) as IUser
+        const user = (await this.getJson(response, {})) as IUser
         return user
     }
 
@@ -106,7 +108,7 @@ class OctoClient {
         if (response.status !== 200) {
             return undefined
         }
-        const user = (await this.getJson(response)) as IUser
+        const user = (await this.getJson(response, {})) as IUser
         return user
     }
 
@@ -137,9 +139,10 @@ class OctoClient {
 
     async importFullArchive(blocks: readonly IBlock[]): Promise<Response> {
         Utils.log(`importFullArchive: ${blocks.length} blocks(s)`)
-        blocks.forEach((block) => {
-            Utils.log(`\t ${block.type}, ${block.id}`)
-        })
+
+        // blocks.forEach((block) => {
+        //     Utils.log(`\t ${block.type}, ${block.id}`)
+        // })
         const body = JSON.stringify(blocks)
         return fetch(this.serverUrl + '/api/v1/blocks/import', {
             method: 'POST',
@@ -183,6 +186,20 @@ class OctoClient {
             if (!block.fields) {
                 block.fields = {}
             }
+
+            if (block.type === 'image') {
+                if (!block.fields.fileId && block.fields.url) {
+                    // Convert deprecated url to fileId
+                    try {
+                        const url = new URL(block.fields.url)
+                        const path = url.pathname
+                        const fileId = path.substring(path.lastIndexOf('/') + 1)
+                        block.fields.fileId = fileId
+                    } catch {
+                        Utils.logError(`Failed to get fileId from url: ${block.fields.url}`)
+                    }
+                }
+            }
         }
     }
 
@@ -224,44 +241,6 @@ class OctoClient {
         })
     }
 
-    // Returns URL of uploaded file, or undefined on failure
-    async uploadFile(file: File): Promise<string | undefined> {
-        // IMPORTANT: We need to post the image as a form. The browser will convert this to a application/x-www-form-urlencoded POST
-        const formData = new FormData()
-        formData.append('file', file)
-
-        try {
-            const response = await fetch(this.serverUrl + '/api/v1/files', {
-                method: 'POST',
-
-                // TIPTIP: Leave out Content-Type here, it will be automatically set by the browser
-                headers: {
-                    Accept: 'application/json',
-                    Authorization: this.token ? 'Bearer ' + this.token : '',
-                },
-                body: formData,
-            })
-            if (response.status !== 200) {
-                return undefined
-            }
-
-            try {
-                const text = await response.text()
-                Utils.log(`uploadFile response: ${text}`)
-                const json = JSON.parse(text)
-
-                // const json = await this.getJson(response)
-                return json.url
-            } catch (e) {
-                Utils.logError(`uploadFile json ERROR: ${e}`)
-            }
-        } catch (e) {
-            Utils.logError(`uploadFile ERROR: ${e}`)
-        }
-
-        return undefined
-    }
-
     // Sharing
 
     async getSharing(rootId: string): Promise<ISharing | undefined> {
@@ -270,7 +249,7 @@ class OctoClient {
         if (response.status !== 200) {
             return undefined
         }
-        const sharing = (await this.getJson(response)) as ISharing
+        const sharing = (await this.getJson(response, undefined)) as ISharing
         return sharing
     }
 
@@ -300,7 +279,7 @@ class OctoClient {
         if (response.status !== 200) {
             return undefined
         }
-        const workspace = (await this.getJson(response)) as IWorkspace
+        const workspace = (await this.getJson(response, undefined)) as IWorkspace
         return workspace
     }
 
@@ -317,10 +296,49 @@ class OctoClient {
         return true
     }
 
-    // Images
+    // Files
 
-    async fetchImage(url: string): Promise<string> {
-        const response = await fetch(url, {headers: this.headers()})
+    // Returns fileId of uploaded file, or undefined on failure
+    async uploadFile(file: File): Promise<string | undefined> {
+        // IMPORTANT: We need to post the image as a form. The browser will convert this to a application/x-www-form-urlencoded POST
+        const formData = new FormData()
+        formData.append('file', file)
+
+        try {
+            const headers = this.headers() as Record<string, string>
+
+            // TIPTIP: Leave out Content-Type here, it will be automatically set by the browser
+            delete headers['Content-Type']
+
+            const response = await fetch(this.serverUrl + '/api/v1/files', {
+                method: 'POST',
+                headers,
+                body: formData,
+            })
+            if (response.status !== 200) {
+                return undefined
+            }
+
+            try {
+                const text = await response.text()
+                Utils.log(`uploadFile response: ${text}`)
+                const json = JSON.parse(text)
+
+                // const json = await this.getJson(response)
+                return json.fileId
+            } catch (e) {
+                Utils.logError(`uploadFile json ERROR: ${e}`)
+            }
+        } catch (e) {
+            Utils.logError(`uploadFile ERROR: ${e}`)
+        }
+
+        return undefined
+    }
+
+    async getFileAsDataUrl(fileId: string): Promise<string> {
+        const path = '/files/' + fileId
+        const response = await fetch(this.serverUrl + path, {headers: this.headers()})
         if (response.status !== 200) {
             return ''
         }
@@ -329,12 +347,6 @@ class OctoClient {
     }
 }
 
-function getReadToken(): string {
-    const queryString = new URLSearchParams(window.location.search)
-    const readToken = queryString.get('r') || ''
-    return readToken
-}
-
-const client = new OctoClient(undefined, localStorage.getItem('sessionId') || '', getReadToken())
+const client = new OctoClient()
 
 export default client

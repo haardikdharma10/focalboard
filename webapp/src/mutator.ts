@@ -5,8 +5,8 @@ import {IBlock, MutableBlock} from './blocks/block'
 import {Board, IPropertyOption, IPropertyTemplate, MutableBoard, PropertyType} from './blocks/board'
 import {BoardView, ISortOption, MutableBoardView} from './blocks/boardView'
 import {Card, MutableCard} from './blocks/card'
+import {FilterGroup} from './blocks/filterGroup'
 import {MutableImageBlock} from './blocks/imageBlock'
-import {FilterGroup} from './filterGroup'
 import octoClient from './octoClient'
 import {OctoUtils} from './octoUtils'
 import undoManager from './undomanager'
@@ -235,7 +235,7 @@ class Mutator {
         const srcTemplate = newBoard.cardProperties[index]
         const newTemplate: IPropertyTemplate = {
             id: Utils.createGuid(),
-            name: `Copy of ${srcTemplate.name}`,
+            name: `${srcTemplate.name} copy`,
             type: srcTemplate.type,
             options: srcTemplate.options.slice(),
         }
@@ -388,6 +388,7 @@ class Mutator {
 
         const newBoard = new MutableBoard(board)
         const newTemplate = newBoard.cardProperties.find((o) => o.id === propertyTemplate.id)!
+        newTemplate.options = []
         newTemplate.type = type
 
         const oldBlocks: IBlock[] = [board]
@@ -402,6 +403,7 @@ class Mutator {
                     if (newValue) {
                         newCard.properties[propertyTemplate.id] = newValue
                     } else {
+                        // This was an invalid select option, so delete it
                         delete newCard.properties[propertyTemplate.id]
                     }
                     newBlocks.push(newCard)
@@ -409,17 +411,23 @@ class Mutator {
                 }
             }
         } else if (type === 'select') {
-            // Map values to template option IDs
+            // Map values to new template option IDs
             for (const card of boardTree.allCards) {
                 const oldValue = card.properties[propertyTemplate.id]
                 if (oldValue) {
-                    const newValue = propertyTemplate.options.find((o) => o.value === oldValue)?.id
-                    const newCard = new MutableCard(card)
-                    if (newValue) {
-                        newCard.properties[propertyTemplate.id] = newValue
-                    } else {
-                        delete newCard.properties[propertyTemplate.id]
+                    let option = newTemplate.options.find((o) => o.value === oldValue)
+                    if (!option) {
+                        option = {
+                            id: Utils.createGuid(),
+                            value: oldValue,
+                            color: 'propColorDefault',
+                        }
+                        newTemplate.options.push(option)
                     }
+
+                    const newCard = new MutableCard(card)
+                    newCard.properties[propertyTemplate.id] = option.id
+
                     newBlocks.push(newCard)
                     oldBlocks.push(card)
                 }
@@ -515,7 +523,7 @@ class Mutator {
         Utils.log(`duplicateCard: duplicating ${newBlocks.length} blocks`)
         if (asTemplate === newCard.isTemplate) {
             // Copy template
-            newCard.title = `Copy of ${newCard.title}`
+            newCard.title = `${newCard.title} copy`
         } else if (asTemplate) {
             // Template from card
             newCard.title = 'New card template'
@@ -553,7 +561,7 @@ class Mutator {
         Utils.log(`duplicateBoard: duplicating ${newBlocks.length} blocks`)
 
         if (asTemplate === newBoard.isTemplate) {
-            newBoard.title = `Copy of ${newBoard.title}`
+            newBoard.title = `${newBoard.title} copy`
         } else if (asTemplate) {
             // Template from board
             newBoard.title = 'New board template'
@@ -585,15 +593,15 @@ class Mutator {
     }
 
     async createImageBlock(parent: IBlock, file: File, description = 'add image'): Promise<IBlock | undefined> {
-        const url = await octoClient.uploadFile(file)
-        if (!url) {
+        const fileId = await octoClient.uploadFile(file)
+        if (!fileId) {
             return undefined
         }
 
         const block = new MutableImageBlock()
         block.parentId = parent.id
         block.rootId = parent.rootId
-        block.url = url
+        block.fileId = fileId
 
         await undoManager.perform(
             async () => {

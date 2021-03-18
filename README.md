@@ -1,29 +1,31 @@
 # Focalboard
 
+Like what you see? :eyes: Give us a GitHub Star! :star:
+
 [![Focalboard](website/site/static/img/hero.jpg)](https://www.focalboard.com)
 
-[Focalboard](https://www.focalboard.com) is an open source project management app for individuals and teams. It comes in two editions:
-* **Personal Desktop**: A stand-alone desktop app for your todos and personal projects
-* **Personal Server**: A self-hosted server for your team to collaborate
+[Focalboard](https://www.focalboard.com) is an open source, self-hosted alternative to Trello, Notion, and Asana. 
+
+It helps define, organize, track and manage work across individuals and teams. Focalboard comes in two editions:
+
+* **Focalboard Personal Desktop**: A stand-alone desktop app for your todos and personal projects. This is a single-tenant locally run server running Focalboard for optimal speed and performance. 
+* **Focalboard Personal Server**: A self-hosted server for your team to collaborate
 
 The same server binary powers both editions.
 
 ## Building the server
 
-First, install dependencies:
-* Go 1.15.2
+Please refer to the [Developer's Tips & Tricks](https://www.focalboard.com/contribute/getting-started/dev-tips/) for more detailed steps. Here's a summary:
+
+First, install basic dependencies:
+* Go 1.15+
+* Node 10+ and npm
+* Mingw64 on Windows
 
 ```
 make prebuild
 make
 ```
-
-The server defaults to using SQLite as the store, but can be configured to use Postgres:
-* In config.json
-	* Set dbtype to "postgres"
-	* Set dbconfig to the connection string (which you can copy from dbconfig_postgres)
-* Create a new "focalboard" database with psql
-* Restart the server
 
 ## Running and testing the server
 
@@ -40,7 +42,7 @@ You can build standalone apps that package the server to run locally against SQL
 * Mac:
     * `make mac-app`
     * run `mac/dist/Focalboard.app`
-    * *Requires: macOS Catalina (10.15)+, Xcode 12.*
+    * *Requires: macOS Catalina (10.15)+, Xcode 12+.*
 * Linux:
     * Install webgtk dependencies
         * `sudo apt-get install libgtk-3-dev`
@@ -51,8 +53,8 @@ You can build standalone apps that package the server to run locally against SQL
 * Windows:
     * Open a git-bash prompt
     * Install win-node-env `npm install -g win-node-env`
-    * `make win-app`
-    * run `win/dist/focalboard.exe`
+    * `make win-wpf-app`
+    * run `cd win-wpf/msix && focalboard.exe`
     * *Requires: Windows 10*
 
 Cross-compilation currently isn't fully supported, so please build on the appropriate platform. Refer to the GitHub Actions workflows (build-mac.yml, build-win.yml, build-ubuntu.yml) for the detailed list of steps on each platform.
@@ -64,3 +66,16 @@ Before checking-in commits, run: `make ci`, which is simlar to the ci.yml workfl
 * Webapp eslint: `cd webapp; npm run check`
 * Webapp unit tests: `cd webapp; npm run test`
 * Webapp UI tests: `cd webapp; npm run cypress:ci`
+
+## Stay informed on progress
+
+* **Changelog**: See [CHANGELOG.md](CHANGELOG.md) for the latest updates
+* **Chat**: Join the [Focalboard community channel](https://community.mattermost.com/core/channels/focalboard)
+
+## Share your feedback 
+
+File bugs, suggest features, join our forum, learn more here: https://github.com/mattermost/focalboard/wiki/Share-your-feedback!
+
+## Contributing
+
+Contribute code, bug reports, and ideas to the future of the Focalboard project. We welcome your input! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to get involved.

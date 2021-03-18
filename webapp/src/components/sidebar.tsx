@@ -6,6 +6,7 @@ import {FormattedMessage, injectIntl, IntlShape} from 'react-intl'
 import {Archiver} from '../archiver'
 import {Board, MutableBoard} from '../blocks/board'
 import {BoardView, IViewType, MutableBoardView} from '../blocks/boardView'
+import {Constants} from '../constants'
 import mutator from '../mutator'
 import octoClient from '../octoClient'
 import {darkTheme, defaultTheme, lightTheme, loadTheme, setTheme, Theme} from '../theme'
@@ -15,6 +16,7 @@ import Button from '../widgets/buttons/button'
 import IconButton from '../widgets/buttons/iconButton'
 import BoardIcon from '../widgets/icons/board'
 import DeleteIcon from '../widgets/icons/delete'
+import EditIcon from '../widgets/icons/edit'
 import DisclosureTriangle from '../widgets/icons/disclosureTriangle'
 import DuplicateIcon from '../widgets/icons/duplicate'
 import HamburgerIcon from '../widgets/icons/hamburger'
@@ -255,6 +257,7 @@ class Sidebar extends React.Component<Props, State> {
                                             <IconButton icon={<OptionsIcon/>}/>
                                             <Menu position='left'>
                                                 <Menu.Text
+                                                    icon={<EditIcon/>}
                                                     id='edit'
                                                     name={intl.formatMessage({id: 'Sidebar.edit-template', defaultMessage: 'Edit'})}
                                                     onClick={() => {
@@ -364,7 +367,13 @@ class Sidebar extends React.Component<Props, State> {
         return (
             <ModalWrapper>
                 <MenuWrapper>
-                    {this.state.whiteLogo ? <LogoWithNameWhiteIcon/> : <LogoWithNameIcon/>}
+                    <div className='logo'>
+                        {this.state.whiteLogo ? <LogoWithNameWhiteIcon/> : <LogoWithNameIcon/>}
+                        <div className='octo-spacer'/>
+                        <div className='version'>
+                            {`v${Constants.versionString}`}
+                        </div>
+                    </div>
                     <Menu>
                         {user && user.username !== 'single-user' && <>
                             <Menu.Label><b>{user.username}</b></Menu.Label>

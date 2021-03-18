@@ -59,3 +59,6 @@ win/temp
 win/dist
 webapp/cypress/screenshots
 webapp/cypress/videos
+server/swagger/clients
+server/vendor
+.idea
