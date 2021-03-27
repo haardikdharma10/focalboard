@@ -179,6 +179,7 @@ func TestDeleteBlock(t *testing.T) {
 			blockIDs[i] = b.ID
 		}
 		require.Contains(t, blockIDs, blockID)
+
 	})
 
 	t.Run("Delete a block", func(t *testing.T) {

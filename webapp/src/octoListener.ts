@@ -6,7 +6,6 @@ import {Utils} from './utils'
 // These are outgoing commands to the server
 type WSCommand = {
     action: string
-    workspaceId?: string
     readToken?: string
     blockIds: string[]
 }
@@ -55,7 +54,7 @@ class OctoListener {
         return readToken
     }
 
-    open(workspaceId: string, blockIds: string[], onChange: OnChangeHandler, onReconnect: () => void): void {
+    open(blockIds: string[], onChange: OnChangeHandler, onReconnect: () => void): void {
         if (this.ws) {
             this.close()
         }
@@ -71,7 +70,7 @@ class OctoListener {
 
         ws.onopen = () => {
             Utils.log('OctoListener webSocket opened.')
-            this.authenticate(workspaceId)
+            this.authenticate()
             this.addBlocks(blockIds)
             this.isInitialized = true
         }
@@ -87,7 +86,7 @@ class OctoListener {
                 const reopenBlockIds = this.isInitialized ? this.blockIds.slice() : blockIds.slice()
                 Utils.logError(`Unexpected close, re-opening with ${reopenBlockIds.length} blocks...`)
                 setTimeout(() => {
-                    this.open(workspaceId, reopenBlockIds, onChange, onReconnect)
+                    this.open(reopenBlockIds, onChange, onReconnect)
                     onReconnect()
                 }, this.reopenDelay)
             }
@@ -136,7 +135,7 @@ class OctoListener {
         ws.close()
     }
 
-    private authenticate(workspaceId: string): void {
+    authenticate(): void {
         if (!this.ws) {
             Utils.assertFailure('OctoListener.addBlocks: ws is not open')
             return
@@ -148,12 +147,11 @@ class OctoListener {
         const command = {
             action: 'AUTH',
             token: this.token,
-            workspaceId,
         }
         this.ws.send(JSON.stringify(command))
     }
 
-    private addBlocks(blockIds: string[]): void {
+    addBlocks(blockIds: string[]): void {
         if (!this.ws) {
             Utils.assertFailure('OctoListener.addBlocks: ws is not open')
             return
@@ -169,7 +167,7 @@ class OctoListener {
         this.blockIds.push(...blockIds)
     }
 
-    private removeBlocks(blockIds: string[]): void {
+    removeBlocks(blockIds: string[]): void {
         if (!this.ws) {
             Utils.assertFailure('OctoListener.removeBlocks: ws is not open')
             return

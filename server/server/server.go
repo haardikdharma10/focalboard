@@ -27,6 +27,7 @@ import (
 	"github.com/mattermost/focalboard/server/services/webhook"
 	"github.com/mattermost/focalboard/server/web"
 	"github.com/mattermost/focalboard/server/ws"
+	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/services/filesstore"
 	"github.com/mattermost/mattermost-server/v5/utils"
 )
@@ -43,8 +44,6 @@ type Server struct {
 
 	localRouter     *mux.Router
 	localModeServer *http.Server
-	api             *api.API
-	appBuilder      func() *app.App
 }
 
 func New(cfg *config.Configuration, singleUserToken string) (*Server, error) {
@@ -63,10 +62,10 @@ func New(cfg *config.Configuration, singleUserToken string) (*Server, error) {
 
 	wsServer := ws.NewServer(auth, singleUserToken)
 
-	filesBackendSettings := filesstore.FileBackendSettings{}
-	filesBackendSettings.DriverName = "local"
-	filesBackendSettings.Directory = cfg.FilesPath
-	filesBackend, appErr := filesstore.NewFileBackend(filesBackendSettings)
+	filesBackendSettings := model.FileSettings{}
+	filesBackendSettings.SetDefaults(false)
+	filesBackendSettings.Directory = &cfg.FilesPath
+	filesBackend, appErr := filesstore.NewFileBackend(&filesBackendSettings, false)
 	if appErr != nil {
 		log.Fatal("Unable to initialize the files storage")
 
@@ -76,7 +75,7 @@ func New(cfg *config.Configuration, singleUserToken string) (*Server, error) {
 	webhookClient := webhook.NewClient(cfg)
 
 	appBuilder := func() *app.App { return app.New(cfg, store, auth, wsServer, filesBackend, webhookClient) }
-	api := api.NewAPI(appBuilder, singleUserToken, cfg.AuthMode)
+	api := api.NewAPI(appBuilder, singleUserToken)
 
 	// Local router for admin APIs
 	localRouter := mux.NewRouter()
@@ -152,7 +151,7 @@ func New(cfg *config.Configuration, singleUserToken string) (*Server, error) {
 		}
 	})
 
-	server := Server{
+	return &Server{
 		config:       cfg,
 		wsServer:     wsServer,
 		webServer:    webServer,
@@ -161,13 +160,7 @@ func New(cfg *config.Configuration, singleUserToken string) (*Server, error) {
 		telemetry:    telemetryService,
 		logger:       logger,
 		localRouter:  localRouter,
-		api:          api,
-		appBuilder:   appBuilder,
-	}
-
-	server.initHandlers()
-
-	return &server, nil
+	}, nil
 }
 
 func (s *Server) Start() error {

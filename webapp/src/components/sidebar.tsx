@@ -3,34 +3,34 @@
 import React from 'react'
 import {FormattedMessage, injectIntl, IntlShape} from 'react-intl'
 
-import {Board, MutableBoard} from '../../blocks/board'
-import {BoardView, IViewType, MutableBoardView} from '../../blocks/boardView'
-import {Constants} from '../../constants'
-import mutator from '../../mutator'
-import octoClient from '../../octoClient'
-import {loadTheme, setTheme, Theme} from '../../theme'
-import {IUser, UserContext} from '../../user'
-import {WorkspaceTree} from '../../viewModel/workspaceTree'
-import IconButton from '../../widgets/buttons/iconButton'
-import BoardIcon from '../../widgets/icons/board'
-import DeleteIcon from '../../widgets/icons/delete'
-import DisclosureTriangle from '../../widgets/icons/disclosureTriangle'
-import DuplicateIcon from '../../widgets/icons/duplicate'
-import HamburgerIcon from '../../widgets/icons/hamburger'
-import HideSidebarIcon from '../../widgets/icons/hideSidebar'
-import LogoWithNameIcon from '../../widgets/icons/logoWithName'
-import LogoWithNameWhiteIcon from '../../widgets/icons/logoWithNameWhite'
-import OptionsIcon from '../../widgets/icons/options'
-import ShowSidebarIcon from '../../widgets/icons/showSidebar'
-import TableIcon from '../../widgets/icons/table'
-import Menu from '../../widgets/menu'
-import MenuWrapper from '../../widgets/menuWrapper'
+import {Archiver} from '../archiver'
+import {Board, MutableBoard} from '../blocks/board'
+import {BoardView, IViewType, MutableBoardView} from '../blocks/boardView'
+import {Constants} from '../constants'
+import mutator from '../mutator'
+import octoClient from '../octoClient'
+import {darkTheme, defaultTheme, lightTheme, loadTheme, setTheme, Theme} from '../theme'
+import {IUser, UserContext} from '../user'
+import {WorkspaceTree} from '../viewModel/workspaceTree'
+import Button from '../widgets/buttons/button'
+import IconButton from '../widgets/buttons/iconButton'
+import BoardIcon from '../widgets/icons/board'
+import DeleteIcon from '../widgets/icons/delete'
+import EditIcon from '../widgets/icons/edit'
+import DisclosureTriangle from '../widgets/icons/disclosureTriangle'
+import DuplicateIcon from '../widgets/icons/duplicate'
+import HamburgerIcon from '../widgets/icons/hamburger'
+import HideSidebarIcon from '../widgets/icons/hideSidebar'
+import LogoWithNameIcon from '../widgets/icons/logoWithName'
+import LogoWithNameWhiteIcon from '../widgets/icons/logoWithNameWhite'
+import OptionsIcon from '../widgets/icons/options'
+import ShowSidebarIcon from '../widgets/icons/showSidebar'
+import TableIcon from '../widgets/icons/table'
+import Menu from '../widgets/menu'
+import MenuWrapper from '../widgets/menuWrapper'
 
-import ModalWrapper from '../modalWrapper'
-import RegistrationLink from '../registrationLink'
-
-import SidebarSettingsMenu from './sidebarSettingsMenu'
-import SidebarAddBoardMenu from './sidebarAddBoardMenu'
+import ModalWrapper from './modalWrapper'
+import RegistrationLinkComponent from './registrationLinkComponent'
 import './sidebar.scss'
 
 type Props = {
@@ -219,19 +219,146 @@ class Sidebar extends React.Component<Props, State> {
 
                 <div className='octo-spacer'/>
 
+                <MenuWrapper>
+                    <Button>
+                        <FormattedMessage
+                            id='Sidebar.add-board'
+                            defaultMessage='+ Add Board'
+                        />
+                    </Button>
+                    <Menu position='top'>
+                        {workspaceTree.boardTemplates.length > 0 && <>
+                            <Menu.Label>
+                                <b>
+                                    <FormattedMessage
+                                        id='Sidebar.select-a-template'
+                                        defaultMessage='Select a template'
+                                    />
+                                </b>
+                            </Menu.Label>
 
-                <SidebarAddBoardMenu
-                    showBoard={this.props.showBoard}
-                    workspaceTree={this.props.workspaceTree}
-                    activeBoardId={this.props.activeBoardId}
-                />
+                            <Menu.Separator/>
+                        </>}
 
-                <SidebarSettingsMenu
-                    setLanguage={this.props.setLanguage}
-                    setWhiteLogo={(whiteLogo: boolean) => this.setState({whiteLogo})}
-                /> 
+                        {workspaceTree.boardTemplates.map((boardTemplate) => {
+                            const displayName = boardTemplate.title || intl.formatMessage({id: 'Sidebar.untitled', defaultMessage: 'Untitled'})
+
+                            return (
+                                <Menu.Text
+                                    key={boardTemplate.id}
+                                    id={boardTemplate.id}
+                                    name={displayName}
+                                    icon={<div className='Icon'>{boardTemplate.icon}</div>}
+                                    onClick={() => {
+                                        this.addBoardFromTemplate(boardTemplate.id)
+                                    }}
+                                    rightIcon={
+                                        <MenuWrapper stopPropagationOnToggle={true}>
+                                            <IconButton icon={<OptionsIcon/>}/>
+                                            <Menu position='left'>
+                                                <Menu.Text
+                                                    icon={<EditIcon/>}
+                                                    id='edit'
+                                                    name={intl.formatMessage({id: 'Sidebar.edit-template', defaultMessage: 'Edit'})}
+                                                    onClick={() => {
+                                                        this.props.showBoard(boardTemplate.id)
+                                                    }}
+                                                />
+                                                <Menu.Text
+                                                    icon={<DeleteIcon/>}
+                                                    id='delete'
+                                                    name={intl.formatMessage({id: 'Sidebar.delete-template', defaultMessage: 'Delete'})}
+                                                    onClick={async () => {
+                                                        await mutator.deleteBlock(boardTemplate, 'delete board template')
+                                                    }}
+                                                />
+                                            </Menu>
+                                        </MenuWrapper>
+                                    }
+                                />
+                            )
+                        })}
+
+                        <Menu.Text
+                            id='empty-template'
+                            name={intl.formatMessage({id: 'Sidebar.empty-board', defaultMessage: 'Empty board'})}
+                            icon={<BoardIcon/>}
+                            onClick={this.addBoardClicked}
+                        />
+
+                        <Menu.Text
+                            id='add-template'
+                            name={intl.formatMessage({id: 'Sidebar.add-template', defaultMessage: '+ New template'})}
+                            onClick={this.addBoardTemplateClicked}
+                        />
+                    </Menu>
+                </MenuWrapper>
+
+                <MenuWrapper>
+                    <div className='octo-sidebar-item subitem'>
+                        <FormattedMessage
+                            id='Sidebar.settings'
+                            defaultMessage='Settings'
+                        />
+                    </div>
+                    <Menu position='top'>
+                        <Menu.Text
+                            id='import'
+                            name={intl.formatMessage({id: 'Sidebar.import-archive', defaultMessage: 'Import archive'})}
+                            onClick={async () => Archiver.importFullArchive()}
+                        />
+                        <Menu.Text
+                            id='export'
+                            name={intl.formatMessage({id: 'Sidebar.export-archive', defaultMessage: 'Export archive'})}
+                            onClick={async () => Archiver.exportFullArchive()}
+                        />
+                        <Menu.SubMenu
+                            id='lang'
+                            name={intl.formatMessage({id: 'Sidebar.set-language', defaultMessage: 'Set language'})}
+                            position='top'
+                        >
+                            <Menu.Text
+                                id='english-lang'
+                                name={intl.formatMessage({id: 'Sidebar.english', defaultMessage: 'English'})}
+                                onClick={async () => this.props.setLanguage('en')}
+                            />
+                            <Menu.Text
+                                id='spanish-lang'
+                                name={intl.formatMessage({id: 'Sidebar.spanish', defaultMessage: 'Spanish'})}
+                                onClick={async () => this.props.setLanguage('es')}
+                            />
+                        </Menu.SubMenu>
+                        <Menu.SubMenu
+                            id='theme'
+                            name={intl.formatMessage({id: 'Sidebar.set-theme', defaultMessage: 'Set theme'})}
+                            position='top'
+                        >
+                            <Menu.Text
+                                id='default-theme'
+                                name={intl.formatMessage({id: 'Sidebar.default-theme', defaultMessage: 'Default theme'})}
+                                onClick={async () => this.updateTheme(defaultTheme)}
+                            />
+                            <Menu.Text
+                                id='dark-theme'
+                                name={intl.formatMessage({id: 'Sidebar.dark-theme', defaultMessage: 'Dark theme'})}
+                                onClick={async () => this.updateTheme(darkTheme)}
+                            />
+                            <Menu.Text
+                                id='light-theme'
+                                name={intl.formatMessage({id: 'Sidebar.light-theme', defaultMessage: 'Light theme'})}
+                                onClick={async () => this.updateTheme(lightTheme)}
+                            />
+                        </Menu.SubMenu>
+                    </Menu>
+                </MenuWrapper>
             </div>
         )
+    }
+
+    private updateTheme(theme: Theme) {
+        setTheme(theme)
+        const whiteLogo = (theme.sidebarWhiteLogo === 'true')
+        this.setState({whiteLogo})
     }
 
     private renderUserMenu(user?: IUser): JSX.Element {
@@ -287,7 +414,7 @@ class Sidebar extends React.Component<Props, State> {
                 </MenuWrapper>
 
                 {this.state.showRegistrationLinkDialog &&
-                    <RegistrationLink
+                    <RegistrationLinkComponent
                         onClose={() => {
                             this.setState({showRegistrationLinkDialog: false})
                         }}
@@ -305,12 +432,58 @@ class Sidebar extends React.Component<Props, State> {
         this.props.showView(view.id, board.id)
     }
 
+    private addBoardClicked = async () => {
+        const {showBoard, intl} = this.props
+
+        const oldBoardId = this.props.activeBoardId
+
+        const board = new MutableBoard()
+        board.rootId = board.id
+
+        const view = new MutableBoardView()
+        view.viewType = 'board'
+        view.parentId = board.id
+        view.rootId = board.rootId
+        view.title = intl.formatMessage({id: 'View.NewBoardTitle', defaultMessage: 'Board view'})
+
+        await mutator.insertBlocks(
+            [board, view],
+            'add board',
+            async () => {
+                showBoard(board.id)
+            },
+            async () => {
+                if (oldBoardId) {
+                    showBoard(oldBoardId)
+                }
+            },
+        )
+    }
+
     private iconForViewType(viewType: IViewType): JSX.Element {
         switch (viewType) {
         case 'board': return <BoardIcon/>
         case 'table': return <TableIcon/>
         default: return <div/>
         }
+    }
+
+    private async addBoardFromTemplate(boardTemplateId: string) {
+        const oldBoardId = this.props.activeBoardId
+
+        await mutator.duplicateBoard(
+            boardTemplateId,
+            this.props.intl.formatMessage({id: 'Mutator.new-board-from-template', defaultMessage: 'new board from template'}),
+            false,
+            async (newBoardId) => {
+                this.props.showBoard(newBoardId)
+            },
+            async () => {
+                if (oldBoardId) {
+                    this.props.showBoard(oldBoardId)
+                }
+            },
+        )
     }
 
     private async duplicateBoard(boardId: string) {
@@ -344,6 +517,25 @@ class Sidebar extends React.Component<Props, State> {
             async () => {
                 if (oldBoardId) {
                     this.props.showBoard(oldBoardId)
+                }
+            },
+        )
+    }
+
+    private addBoardTemplateClicked = async () => {
+        const {activeBoardId} = this.props
+
+        const boardTemplate = new MutableBoard()
+        boardTemplate.rootId = boardTemplate.id
+        boardTemplate.isTemplate = true
+        await mutator.insertBlock(
+            boardTemplate,
+            'add board template',
+            async () => {
+                this.props.showBoard(boardTemplate.id)
+            }, async () => {
+                if (activeBoardId) {
+                    this.props.showBoard(activeBoardId)
                 }
             },
         )

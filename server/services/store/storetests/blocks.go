@@ -10,46 +10,42 @@ import (
 )
 
 func StoreTestBlocksStore(t *testing.T, setup func(t *testing.T) (store.Store, func())) {
-	container := store.Container{
-		WorkspaceID: "",
-	}
-
 	t.Run("InsertBlock", func(t *testing.T) {
 		store, tearDown := setup(t)
 		defer tearDown()
-		testInsertBlock(t, store, container)
+		testInsertBlock(t, store)
 	})
 	t.Run("DeleteBlock", func(t *testing.T) {
 		store, tearDown := setup(t)
 		defer tearDown()
-		testDeleteBlock(t, store, container)
+		testDeleteBlock(t, store)
 	})
 	t.Run("GetSubTree2", func(t *testing.T) {
 		store, tearDown := setup(t)
 		defer tearDown()
-		testGetSubTree2(t, store, container)
+		testGetSubTree2(t, store)
 	})
 	t.Run("GetSubTree3", func(t *testing.T) {
 		store, tearDown := setup(t)
 		defer tearDown()
-		testGetSubTree3(t, store, container)
+		testGetSubTree3(t, store)
 	})
 	t.Run("GetParentID", func(t *testing.T) {
 		store, tearDown := setup(t)
 		defer tearDown()
-		testGetParentID(t, store, container)
+		testGetParentID(t, store)
 	})
 	t.Run("GetRootID", func(t *testing.T) {
 		store, tearDown := setup(t)
 		defer tearDown()
-		testGetRootID(t, store, container)
+		testGetRootID(t, store)
 	})
 }
 
-func testInsertBlock(t *testing.T, store store.Store, container store.Container) {
+func testInsertBlock(t *testing.T, store store.Store) {
 	userID := "user-id"
 
-	blocks, err := store.GetAllBlocks(container)
+	blocks, err := store.GetAllBlocks()
 	require.NoError(t, err)
 	initialCount := len(blocks)
 
@@ -60,10 +56,10 @@ func testInsertBlock(t *testing.T, store store.Store, container store.Container)
 			ModifiedBy: userID,
 		}
 
-		err := store.InsertBlock(container, block)
+		err := store.InsertBlock(block)
 		require.NoError(t, err)
 
-		blocks, err := store.GetAllBlocks(container)
+		blocks, err := store.GetAllBlocks()
 		require.NoError(t, err)
 		require.Len(t, blocks, initialCount+1)
 	})
@@ -75,10 +71,10 @@ func testInsertBlock(t *testing.T, store store.Store, container store.Container)
 			ModifiedBy: userID,
 		}
 
-		err := store.InsertBlock(container, block)
+		err := store.InsertBlock(block)
 		require.Error(t, err)
 
-		blocks, err := store.GetAllBlocks(container)
+		blocks, err := store.GetAllBlocks()
 		require.NoError(t, err)
 		require.Len(t, blocks, initialCount+1)
 	})
@@ -91,19 +87,19 @@ func testInsertBlock(t *testing.T, store store.Store, container store.Container)
 			Fields:     map[string]interface{}{"no-serialiable-value": t.Run},
 		}
 
-		err := store.InsertBlock(container, block)
+		err := store.InsertBlock(block)
 		require.Error(t, err)
 
-		blocks, err := store.GetAllBlocks(container)
+		blocks, err := store.GetAllBlocks()
 		require.NoError(t, err)
 		require.Len(t, blocks, initialCount+1)
 	})
 }
 
-func testGetSubTree2(t *testing.T, store store.Store, container store.Container) {
+func testGetSubTree2(t *testing.T, store store.Store) {
 	userID := "user-id"
 
-	blocks, err := store.GetAllBlocks(container)
+	blocks, err := store.GetAllBlocks()
 	require.NoError(t, err)
 	initialCount := len(blocks)
 
@@ -145,14 +141,14 @@ func testGetSubTree2(t *testing.T, store store.Store, container store.Container)
 		},
 	}
 
-	InsertBlocks(t, store, container, blocksToInsert)
+	InsertBlocks(t, store, blocksToInsert)
 
-	blocks, err = store.GetAllBlocks(container)
+	blocks, err = store.GetAllBlocks()
 	require.NoError(t, err)
 	require.Len(t, blocks, initialCount+6)
 
 	t.Run("from root id", func(t *testing.T) {
-		blocks, err = store.GetSubTree2(container, "parent")
+		blocks, err = store.GetSubTree2("parent")
 		require.NoError(t, err)
 		require.Len(t, blocks, 3)
 		require.True(t, ContainsBlockWithID(blocks, "parent"))
@@ -161,7 +157,7 @@ func testGetSubTree2(t *testing.T, store store.Store, container store.Container)
 	})
 
 	t.Run("from child id", func(t *testing.T) {
-		blocks, err = store.GetSubTree2(container, "child1")
+		blocks, err = store.GetSubTree2("child1")
 		require.NoError(t, err)
 		require.Len(t, blocks, 2)
 		require.True(t, ContainsBlockWithID(blocks, "child1"))
@@ -169,16 +165,16 @@ func testGetSubTree2(t *testing.T, store store.Store, container store.Container)
 	})
 
 	t.Run("from not existing id", func(t *testing.T) {
-		blocks, err = store.GetSubTree2(container, "not-exists")
+		blocks, err = store.GetSubTree2("not-exists")
 		require.NoError(t, err)
 		require.Len(t, blocks, 0)
 	})
 }
 
-func testGetSubTree3(t *testing.T, store store.Store, container store.Container) {
+func testGetSubTree3(t *testing.T, store store.Store) {
 	userID := "user-id"
 
-	blocks, err := store.GetAllBlocks(container)
+	blocks, err := store.GetAllBlocks()
 	require.NoError(t, err)
 	initialCount := len(blocks)
 
@@ -220,14 +216,14 @@ func testGetSubTree3(t *testing.T, store store.Store, container store.Container)
 		},
 	}
 
-	InsertBlocks(t, store, container, blocksToInsert)
+	InsertBlocks(t, store, blocksToInsert)
 
-	blocks, err = store.GetAllBlocks(container)
+	blocks, err = store.GetAllBlocks()
 	require.NoError(t, err)
 	require.Len(t, blocks, initialCount+6)
 
 	t.Run("from root id", func(t *testing.T) {
-		blocks, err = store.GetSubTree3(container, "parent")
+		blocks, err = store.GetSubTree3("parent")
 		require.NoError(t, err)
 		require.Len(t, blocks, 5)
 		require.True(t, ContainsBlockWithID(blocks, "parent"))
@@ -238,7 +234,7 @@ func testGetSubTree3(t *testing.T, store store.Store, container store.Container)
 	})
 
 	t.Run("from child id", func(t *testing.T) {
-		blocks, err = store.GetSubTree3(container, "child1")
+		blocks, err = store.GetSubTree3("child1")
 		require.NoError(t, err)
 		require.Len(t, blocks, 3)
 		require.True(t, ContainsBlockWithID(blocks, "child1"))
@@ -247,16 +243,16 @@ func testGetSubTree3(t *testing.T, store store.Store, container store.Container)
 	})
 
 	t.Run("from not existing id", func(t *testing.T) {
-		blocks, err = store.GetSubTree3(container, "not-exists")
+		blocks, err = store.GetSubTree3("not-exists")
 		require.NoError(t, err)
 		require.Len(t, blocks, 0)
 	})
 }
 
-func testGetRootID(t *testing.T, store store.Store, container store.Container) {
+func testGetRootID(t *testing.T, store store.Store) {
 	userID := "user-id"
 
-	blocks, err := store.GetAllBlocks(container)
+	blocks, err := store.GetAllBlocks()
 	require.NoError(t, err)
 	initialCount := len(blocks)
 
@@ -298,34 +294,34 @@ func testGetRootID(t *testing.T, store store.Store, container store.Container) {
 		},
 	}
 
-	InsertBlocks(t, store, container, blocksToInsert)
+	InsertBlocks(t, store, blocksToInsert)
 
-	blocks, err = store.GetAllBlocks(container)
+	blocks, err = store.GetAllBlocks()
 	require.NoError(t, err)
 	require.Len(t, blocks, initialCount+6)
 
 	t.Run("from root id", func(t *testing.T) {
-		rootID, err := store.GetRootID(container, "parent")
+		rootID, err := store.GetRootID("parent")
 		require.NoError(t, err)
 		require.Equal(t, "parent", rootID)
 	})
 
 	t.Run("from child id", func(t *testing.T) {
-		rootID, err := store.GetRootID(container, "child1")
+		rootID, err := store.GetRootID("child1")
 		require.NoError(t, err)
 		require.Equal(t, "parent", rootID)
 	})
 
 	t.Run("from not existing id", func(t *testing.T) {
-		_, err := store.GetRootID(container, "not-exists")
+		_, err := store.GetRootID("not-exists")
 		require.Error(t, err)
 	})
 }
 
-func testGetParentID(t *testing.T, store store.Store, container store.Container) {
+func testGetParentID(t *testing.T, store store.Store) {
 	userID := "user-id"
 
-	blocks, err := store.GetAllBlocks(container)
+	blocks, err := store.GetAllBlocks()
 	require.NoError(t, err)
 	initialCount := len(blocks)
 
@@ -367,34 +363,34 @@ func testGetParentID(t *testing.T, store store.Store, container store.Container)
 		},
 	}
 
-	InsertBlocks(t, store, container, blocksToInsert)
+	InsertBlocks(t, store, blocksToInsert)
 
-	blocks, err = store.GetAllBlocks(container)
+	blocks, err = store.GetAllBlocks()
 	require.NoError(t, err)
 	require.Len(t, blocks, initialCount+6)
 
 	t.Run("from root id", func(t *testing.T) {
-		parentID, err := store.GetParentID(container, "parent")
+		parentID, err := store.GetParentID("parent")
 		require.NoError(t, err)
 		require.Equal(t, "", parentID)
 	})
 
 	t.Run("from child id", func(t *testing.T) {
-		parentID, err := store.GetParentID(container, "grandchild1")
+		parentID, err := store.GetParentID("grandchild1")
 		require.NoError(t, err)
 		require.Equal(t, "child1", parentID)
 	})
 
 	t.Run("from not existing id", func(t *testing.T) {
-		_, err := store.GetParentID(container, "not-exists")
+		_, err := store.GetParentID("not-exists")
 		require.Error(t, err)
 	})
 }
 
-func testDeleteBlock(t *testing.T, store store.Store, container store.Container) {
+func testDeleteBlock(t *testing.T, store store.Store) {
 	userID := "user-id"
 
-	blocks, err := store.GetAllBlocks(container)
+	blocks, err := store.GetAllBlocks()
 	require.NoError(t, err)
 	initialCount := len(blocks)
 
@@ -415,34 +411,34 @@ func testDeleteBlock(t *testing.T, store store.Store, container store.Container)
 			ModifiedBy: userID,
 		},
 	}
-	InsertBlocks(t, store, container, blocksToInsert)
+	InsertBlocks(t, store, blocksToInsert)
 
-	blocks, err = store.GetAllBlocks(container)
+	blocks, err = store.GetAllBlocks()
 	require.NoError(t, err)
 	require.Len(t, blocks, initialCount+3)
 
 	t.Run("exiting id", func(t *testing.T) {
 		// Wait for not colliding the ID+insert_at key
 		time.Sleep(1 * time.Millisecond)
-		err := store.DeleteBlock(container, "block1", userID)
+		err := store.DeleteBlock("block1", userID)
 		require.NoError(t, err)
 	})
 
 	t.Run("exiting id multiple times", func(t *testing.T) {
 		// Wait for not colliding the ID+insert_at key
 		time.Sleep(1 * time.Millisecond)
-		err := store.DeleteBlock(container, "block1", userID)
+		err := store.DeleteBlock("block1", userID)
 		require.NoError(t, err)
 		// Wait for not colliding the ID+insert_at key
 		time.Sleep(1 * time.Millisecond)
-		err = store.DeleteBlock(container, "block1", userID)
+		err = store.DeleteBlock("block1", userID)
 		require.NoError(t, err)
 	})
 
 	t.Run("from not existing id", func(t *testing.T) {
 		// Wait for not colliding the ID+insert_at key
 		time.Sleep(1 * time.Millisecond)
-		err := store.DeleteBlock(container, "not-exists", userID)
+		err := store.DeleteBlock("not-exists", userID)
 		require.NoError(t, err)
 	})
 }

@@ -11,25 +11,26 @@ type SwitchOptionProps = MenuOptionProps & {
     icon?: React.ReactNode,
 }
 
-function SwitchOption(props: SwitchOptionProps): JSX.Element {
-    const {name, icon, isOn} = props
+export default class SwitchOption extends React.PureComponent<SwitchOptionProps> {
+    private handleOnClick = (e: React.MouseEvent): void => {
+        e.target.dispatchEvent(new Event('menuItemClicked'))
+        this.props.onClick(this.props.id)
+    }
 
-    return (
-        <div
-            className='MenuOption SwitchOption menu-option'
-            onClick={(e: React.MouseEvent) => {
-                e.target.dispatchEvent(new Event('menuItemClicked'))
-                props.onClick(props.id)
-            }}
-        >
-            {icon ?? <div className='noicon'/>}
-            <div className='menu-name'>{name}</div>
-            <Switch
-                isOn={isOn}
-                onChanged={() => {}}
-            />
-        </div>
-    )
+    public render(): JSX.Element {
+        const {name, icon, isOn} = this.props
+        return (
+            <div
+                className='MenuOption SwitchOption menu-option'
+                onClick={this.handleOnClick}
+            >
+                {icon ?? <div className='noicon'/>}
+                <div className='menu-name'>{name}</div>
+                <Switch
+                    isOn={isOn}
+                    onChanged={() => {}}
+                />
+            </div>
+        )
+    }
 }
-
-export default React.memo(SwitchOption)

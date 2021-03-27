@@ -4,7 +4,6 @@ import React from 'react'
 import {FormattedMessage, injectIntl, IntlShape} from 'react-intl'
 
 import mutator from '../mutator'
-import octoClient from '../octoClient'
 import {OctoListener} from '../octoListener'
 import {Utils} from '../utils'
 import {BoardTree} from '../viewModel/boardTree'
@@ -54,7 +53,6 @@ class CardDialog extends React.Component<Props, State> {
 
         this.cardListener = new OctoListener()
         this.cardListener.open(
-            octoClient.workspaceId,
             [this.props.cardId],
             async (blocks) => {
                 Utils.log(`cardListener.onChanged: ${blocks.length}`)

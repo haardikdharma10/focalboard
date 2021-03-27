@@ -10,21 +10,23 @@ type ColorOptionProps = MenuOptionProps & {
     icon?: React.ReactNode
 }
 
-function ColorOption(props: ColorOptionProps): JSX.Element {
-    const {id, name, icon} = props
-    return (
-        <div
-            className='MenuOption ColorOption menu-option'
-            onClick={(e: React.MouseEvent): void => {
-                e.target.dispatchEvent(new Event('menuItemClicked'))
-                props.onClick(props.id)
-            }}
-        >
-            {icon ?? <div className='noicon'/>}
-            <div className='menu-name'>{name}</div>
-            <div className={`menu-colorbox ${id}`}/>
-        </div>
-    )
-}
+export default class ColorOption extends React.PureComponent<ColorOptionProps> {
+    private handleOnClick = (e: React.MouseEvent): void => {
+        e.target.dispatchEvent(new Event('menuItemClicked'))
+        this.props.onClick(this.props.id)
+    }
 
-export default React.memo(ColorOption)
+    public render(): JSX.Element {
+        const {id, name, icon} = this.props
+        return (
+            <div
+                className='MenuOption ColorOption menu-option'
+                onClick={this.handleOnClick}
+            >
+                {icon ?? <div className='noicon'/>}
+                <div className='menu-name'>{name}</div>
+                <div className={`menu-colorbox ${id}`}/>
+            </div>
+        )
+    }
+}

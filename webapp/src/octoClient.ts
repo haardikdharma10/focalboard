@@ -14,16 +14,11 @@ class OctoClient {
     get token(): string {
         return localStorage.getItem('sessionId') || ''
     }
-    set token(value: string) {
-        localStorage.setItem('sessionId', value)
-    }
     get readToken(): string {
         const queryString = new URLSearchParams(window.location.search)
         const readToken = queryString.get('r') || ''
         return readToken
     }
-
-    workspaceId = '0'
 
     constructor(serverUrl?: string) {
         this.serverUrl = serverUrl || window.location.origin
@@ -97,10 +92,6 @@ class OctoClient {
         }
     }
 
-    private workspacePath() {
-        return `/api/v1/workspaces/${this.workspaceId}`
-    }
-
     async getMe(): Promise<IUser | undefined> {
         const path = '/api/v1/users/me'
         const response = await fetch(this.serverUrl + path, {headers: this.headers()})
@@ -122,7 +113,7 @@ class OctoClient {
     }
 
     async getSubtree(rootId?: string, levels = 2): Promise<IBlock[]> {
-        let path = this.workspacePath() + `/blocks/${encodeURIComponent(rootId || '')}/subtree?l=${levels}`
+        let path = `/api/v1/blocks/${encodeURIComponent(rootId || '')}/subtree?l=${levels}`
         if (this.readToken) {
             path += `&read_token=${this.readToken}`
         }
@@ -136,7 +127,7 @@ class OctoClient {
     }
 
     async exportFullArchive(): Promise<IBlock[]> {
-        const path = this.workspacePath() + '/blocks/export'
+        const path = '/api/v1/blocks/export'
         const response = await fetch(this.serverUrl + path, {headers: this.headers()})
         if (response.status !== 200) {
             return []
@@ -153,7 +144,7 @@ class OctoClient {
         //     Utils.log(`\t ${block.type}, ${block.id}`)
         // })
         const body = JSON.stringify(blocks)
-        return fetch(this.serverUrl + this.workspacePath() + '/blocks/import', {
+        return fetch(this.serverUrl + '/api/v1/blocks/import', {
             method: 'POST',
             headers: this.headers(),
             body,
@@ -163,15 +154,15 @@ class OctoClient {
     async getBlocksWithParent(parentId: string, type?: string): Promise<IBlock[]> {
         let path: string
         if (type) {
-            path = this.workspacePath() + `/blocks?parent_id=${encodeURIComponent(parentId)}&type=${encodeURIComponent(type)}`
+            path = `/api/v1/blocks?parent_id=${encodeURIComponent(parentId)}&type=${encodeURIComponent(type)}`
         } else {
-            path = this.workspacePath() + `/blocks?parent_id=${encodeURIComponent(parentId)}`
+            path = `/api/v1/blocks?parent_id=${encodeURIComponent(parentId)}`
         }
         return this.getBlocksWithPath(path)
     }
 
     async getBlocksWithType(type: string): Promise<IBlock[]> {
-        const path = this.workspacePath() + `/blocks?type=${encodeURIComponent(type)}`
+        const path = `/api/v1/blocks?type=${encodeURIComponent(type)}`
         return this.getBlocksWithPath(path)
     }
 
@@ -227,7 +218,7 @@ class OctoClient {
 
     async deleteBlock(blockId: string): Promise<Response> {
         Utils.log(`deleteBlock: ${blockId}`)
-        return fetch(this.serverUrl + this.workspacePath() + `/blocks/${encodeURIComponent(blockId)}`, {
+        return fetch(this.serverUrl + `/api/v1/blocks/${encodeURIComponent(blockId)}`, {
             method: 'DELETE',
             headers: this.headers(),
         })
@@ -243,7 +234,7 @@ class OctoClient {
             Utils.log(`\t ${block.type}, ${block.id}, ${block.title?.substr(0, 50) || ''}`)
         })
         const body = JSON.stringify(blocks)
-        return fetch(this.serverUrl + this.workspacePath() + '/blocks', {
+        return fetch(this.serverUrl + '/api/v1/blocks', {
             method: 'POST',
             headers: this.headers(),
             body,
@@ -253,7 +244,7 @@ class OctoClient {
     // Sharing
 
     async getSharing(rootId: string): Promise<ISharing | undefined> {
-        const path = this.workspacePath() + `/sharing/${rootId}`
+        const path = `/api/v1/sharing/${rootId}`
         const response = await fetch(this.serverUrl + path, {headers: this.headers()})
         if (response.status !== 200) {
             return undefined
@@ -263,7 +254,7 @@ class OctoClient {
     }
 
     async setSharing(sharing: ISharing): Promise<boolean> {
-        const path = this.workspacePath() + `/sharing/${sharing.id}`
+        const path = `/api/v1/sharing/${sharing.id}`
         const body = JSON.stringify(sharing)
         const response = await fetch(
             this.serverUrl + path,
@@ -283,7 +274,7 @@ class OctoClient {
     // Workspace
 
     async getWorkspace(): Promise<IWorkspace | undefined> {
-        const path = this.workspacePath()
+        const path = '/api/v1/workspace'
         const response = await fetch(this.serverUrl + path, {headers: this.headers()})
         if (response.status !== 200) {
             return undefined
@@ -293,7 +284,7 @@ class OctoClient {
     }
 
     async regenerateWorkspaceSignupToken(): Promise<boolean> {
-        const path = this.workspacePath() + '/regenerate_signup_token'
+        const path = '/api/v1/workspace/regenerate_signup_token'
         const response = await fetch(this.serverUrl + path, {
             method: 'POST',
             headers: this.headers(),

@@ -14,24 +14,24 @@ type Props = {
     text: React.ReactNode
 }
 
-function ButtonWithMenu(props: Props): JSX.Element {
-    return (
-        <div
-            onClick={props.onClick}
-            className='ButtonWithMenu'
-            title={props.title}
-        >
-            <div className='button-text'>
-                {props.text}
-            </div>
-            <MenuWrapper stopPropagationOnToggle={true}>
-                <div className='button-dropdown'>
-                    <DropdownIcon/>
+export default class ButtonWithMenu extends React.PureComponent<Props> {
+    public render(): JSX.Element {
+        return (
+            <div
+                onClick={this.props.onClick}
+                className='ButtonWithMenu'
+                title={this.props.title}
+            >
+                <div className='button-text'>
+                    {this.props.text}
                 </div>
-                {props.children}
-            </MenuWrapper>
-        </div>
-    )
+                <MenuWrapper stopPropagationOnToggle={true}>
+                    <div className='button-dropdown'>
+                        <DropdownIcon/>
+                    </div>
+                    {this.props.children}
+                </MenuWrapper>
+            </div>
+        )
+    }
 }
-
-export default React.memo(ButtonWithMenu)

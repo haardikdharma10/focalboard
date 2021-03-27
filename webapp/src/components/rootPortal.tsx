@@ -1,29 +1,44 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useEffect} from 'react'
+import PropTypes from 'prop-types'
+import React from 'react'
 import ReactDOM from 'react-dom'
 
 type Props = {
     children: React.ReactNode
 }
 
-const RootPortal = React.memo((props: Props): JSX.Element => {
-    const [el] = useState(document.createElement('div'))
-    const rootPortal = document.getElementById('root-portal')
+export default class RootPortal extends React.PureComponent<Props> {
+    el: HTMLDivElement
 
-    useEffect(() => {
+    static propTypes = {
+        children: PropTypes.node,
+    }
+
+    constructor(props: Props) {
+        super(props)
+        this.el = document.createElement('div')
+    }
+
+    componentDidMount(): void {
+        const rootPortal = document.getElementById('root-portal')
         if (rootPortal) {
-            rootPortal.appendChild(el)
+            rootPortal.appendChild(this.el)
         }
-        return () => {
-            if (rootPortal) {
-                rootPortal.removeChild(el)
-            }
+    }
+
+    componentWillUnmount(): void {
+        const rootPortal = document.getElementById('root-portal')
+        if (rootPortal) {
+            rootPortal.removeChild(this.el)
         }
-    }, [])
+    }
 
-    return ReactDOM.createPortal(props.children, el)  // eslint-disable-line
-})
-
-export default RootPortal
+    render(): JSX.Element {
+        return ReactDOM.createPortal(
+            this.props.children,
+            this.el,
+        )
+    }
+}

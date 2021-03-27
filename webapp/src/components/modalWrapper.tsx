@@ -4,15 +4,16 @@ import React from 'react'
 import './modalWrapper.scss'
 
 type Props = {
-    children: React.ReactNode
 }
 
-const ModalWrapper = React.memo((props: Props) => {
-    return (
-        <div className='ModalWrapper'>
-            {props.children}
-        </div>
-    )
-})
+class ModalWrapper extends React.PureComponent<Props> {
+    render(): JSX.Element {
+        return (
+            <div className='ModalWrapper'>
+                {this.props.children}
+            </div>
+        )
+    }
+}
 
 export default ModalWrapper

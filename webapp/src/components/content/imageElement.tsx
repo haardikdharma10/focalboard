@@ -1,6 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import React, {useEffect, useState} from 'react'
+import React from 'react'
+import {injectIntl, IntlShape} from 'react-intl'
 
 import {IContentBlock} from '../../blocks/contentBlock'
 import {MutableImageBlock} from '../../blocks/imageBlock'
@@ -12,34 +13,43 @@ import {contentRegistry} from './contentRegistry'
 
 type Props = {
     block: IContentBlock
+    intl: IntlShape
 }
 
-const ImageElement = React.memo((props: Props): JSX.Element|null => {
-    const [imageDataUrl, setImageDataUrl] = useState<string|null>(null)
+type State = {
+    imageDataUrl?: string
+}
 
-    useEffect(() => {
-        if (!imageDataUrl) {
-            const loadImage = async () => {
-                const url = await octoClient.getFileAsDataUrl(props.block.fields.fileId)
-                setImageDataUrl(url)
-            }
-            loadImage()
+class ImageElement extends React.PureComponent<Props> {
+    state: State = {}
+
+    componentDidMount(): void {
+        if (!this.state.imageDataUrl) {
+            this.loadImage()
         }
-    })
-
-    const {block} = props
-
-    if (!imageDataUrl) {
-        return null
     }
 
-    return (
-        <img
-            src={imageDataUrl}
-            alt={block.title}
-        />
-    )
-})
+    private async loadImage() {
+        const imageDataUrl = await octoClient.getFileAsDataUrl(this.props.block.fields.fileId)
+        this.setState({imageDataUrl})
+    }
+
+    public render(): JSX.Element | null {
+        const {block} = this.props
+        const {imageDataUrl} = this.state
+
+        if (!imageDataUrl) {
+            return null
+        }
+
+        return (
+            <img
+                src={imageDataUrl}
+                alt={block.title}
+            />
+        )
+    }
+}
 
 contentRegistry.registerContentType({
     type: 'image',
@@ -61,7 +71,14 @@ contentRegistry.registerContentType({
 
         // return new MutableImageBlock()
     },
-    createComponent: (block) => <ImageElement block={block}/>,
+    createComponent: (block, intl) => {
+        return (
+            <ImageElement
+                block={block}
+                intl={intl}
+            />
+        )
+    },
 })
 
-export default ImageElement
+export default injectIntl(ImageElement)

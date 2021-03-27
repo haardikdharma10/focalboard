@@ -165,4 +165,4 @@ class Editable extends React.PureComponent<Props> {
     }
 }
 
-export default Editable
+export {Editable}

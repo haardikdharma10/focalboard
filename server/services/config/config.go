@@ -18,7 +18,6 @@ type Configuration struct {
 	DBType                  string   `json:"dbtype" mapstructure:"dbtype"`
 	DBConfigString          string   `json:"dbconfig" mapstructure:"dbconfig"`
 	UseSSL                  bool     `json:"useSSL" mapstructure:"useSSL"`
-	SecureCookie            bool     `json:"secureCookie" mapstructure:"secureCookie"`
 	WebPath                 string   `json:"webpath" mapstructure:"webpath"`
 	FilesPath               string   `json:"filespath" mapstructure:"filespath"`
 	Telemetry               bool     `json:"telemetry" mapstructure:"telemetry"`
@@ -29,11 +28,6 @@ type Configuration struct {
 	LocalOnly               bool     `json:"localonly" mapstructure:"localonly"`
 	EnableLocalMode         bool     `json:"enableLocalMode" mapstructure:"enableLocalMode"`
 	LocalModeSocketLocation string   `json:"localModeSocketLocation" mapstructure:"localModeSocketLocation"`
-
-	AuthMode               string `json:"authMode" mapstructure:"authMode"`
-	MattermostURL          string `json:"mattermostURL" mapstructure:"mattermostURL"`
-	MattermostClientID     string `json:"mattermostClientID" mapstructure:"mattermostClientID"`
-	MattermostClientSecret string `json:"mattermostClientSecret" mapstructure:"mattermostClientSecret"`
 }
 
 // ReadConfigFile read the configuration from the filesystem.
@@ -45,7 +39,6 @@ func ReadConfigFile() (*Configuration, error) {
 	viper.SetDefault("Port", DefaultPort)
 	viper.SetDefault("DBType", "sqlite3")
 	viper.SetDefault("DBConfigString", "./octo.db")
-	viper.SetDefault("SecureCookie", false)
 	viper.SetDefault("WebPath", "./pack")
 	viper.SetDefault("FilesPath", "./files")
 	viper.SetDefault("Telemetry", true)
@@ -55,8 +48,6 @@ func ReadConfigFile() (*Configuration, error) {
 	viper.SetDefault("LocalOnly", false)
 	viper.SetDefault("EnableLocalMode", false)
 	viper.SetDefault("LocalModeSocketLocation", "/var/tmp/focalboard_local.socket")
-
-	viper.SetDefault("AuthMode", "native")
 
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {             // Handle errors reading the config file
@@ -71,16 +62,7 @@ func ReadConfigFile() (*Configuration, error) {
 	}
 
 	log.Println("readConfigFile")
-	log.Printf("%+v", removeSecurityData(configuration))
+	log.Printf("%+v", configuration)
 
 	return &configuration, nil
-}
-
-func removeSecurityData(config Configuration) Configuration {
-	clean := config
-	clean.Secret = "hidden"
-	clean.MattermostClientID = "hidden"
-	clean.MattermostClientSecret = "hidden"
-
-	return clean
 }

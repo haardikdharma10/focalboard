@@ -10,18 +10,34 @@ type Props = {
 }
 
 // Switch is an on-off style switch / checkbox
-function Switch(props: Props): JSX.Element {
-    const className = props.isOn ? 'Switch on' : 'Switch'
-    return (
-        <div
-            className={className}
-            onClick={() => {
-                props.onChanged(!props.isOn)
-            }}
-        >
-            <div className='octo-switch-inner'/>
-        </div>
-    )
+export default class Switch extends React.Component<Props> {
+    static defaultProps = {
+        isMarkdown: false,
+        isMultiline: false,
+    }
+
+    shouldComponentUpdate(): boolean {
+        return true
+    }
+
+    render(): JSX.Element {
+        const {isOn} = this.props
+
+        const className = isOn ? 'Switch on' : 'Switch'
+        return (
+            <div
+                className={className}
+                onClick={this.onClicked}
+            >
+                <div className='octo-switch-inner'/>
+            </div>
+        )
+    }
+
+    private onClicked = async () => {
+        const newIsOn = !this.props.isOn
+        this.props.onChanged(newIsOn)
+    }
 }
 
-export default React.memo(Switch)
+export {Switch}

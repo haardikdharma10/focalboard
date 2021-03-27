@@ -3,20 +3,20 @@
 import React from 'react'
 import {injectIntl, IntlShape} from 'react-intl'
 
-import {IPropertyTemplate} from '../../blocks/board'
-import {Card} from '../../blocks/card'
-import mutator from '../../mutator'
-import IconButton from '../../widgets/buttons/iconButton'
-import DeleteIcon from '../../widgets/icons/delete'
-import DuplicateIcon from '../../widgets/icons/duplicate'
-import OptionsIcon from '../../widgets/icons/options'
-import Menu from '../../widgets/menu'
-import MenuWrapper from '../../widgets/menuWrapper'
+import {IPropertyTemplate} from '../blocks/board'
+import {Card} from '../blocks/card'
+import mutator from '../mutator'
+import IconButton from '../widgets/buttons/iconButton'
+import DeleteIcon from '../widgets/icons/delete'
+import DuplicateIcon from '../widgets/icons/duplicate'
+import OptionsIcon from '../widgets/icons/options'
+import Menu from '../widgets/menu'
+import MenuWrapper from '../widgets/menuWrapper'
 
-import './kanbanCard.scss'
-import PropertyValueElement from '../propertyValueElement'
+import './boardCard.scss'
+import PropertyValueElement from './propertyValueElement'
 
-type KanbanCardProps = {
+type BoardCardProps = {
     card: Card
     visiblePropertyTemplates: IPropertyTemplate[]
     isSelected: boolean
@@ -29,13 +29,16 @@ type KanbanCardProps = {
     readonly: boolean
 }
 
-type KanbanCardState = {
+type BoardCardState = {
     isDragged?: boolean
     isDragOver?: boolean
 }
 
-class KanbanCard extends React.Component<KanbanCardProps, KanbanCardState> {
-    state: KanbanCardState = {}
+class BoardCard extends React.Component<BoardCardProps, BoardCardState> {
+    constructor(props: BoardCardProps) {
+        super(props)
+        this.state = {}
+    }
 
     shouldComponentUpdate(): boolean {
         return true
@@ -44,7 +47,7 @@ class KanbanCard extends React.Component<KanbanCardProps, KanbanCardState> {
     render(): JSX.Element {
         const {card, intl} = this.props
         const visiblePropertyTemplates = this.props.visiblePropertyTemplates || []
-        let className = this.props.isSelected ? 'KanbanCard selected' : 'KanbanCard'
+        let className = this.props.isSelected ? 'BoardCard selected' : 'BoardCard'
         if (this.props.isDropZone && this.state.isDragOver) {
             className += ' dragover'
         }
@@ -94,13 +97,13 @@ class KanbanCard extends React.Component<KanbanCardProps, KanbanCardState> {
                             <Menu.Text
                                 icon={<DeleteIcon/>}
                                 id='delete'
-                                name={intl.formatMessage({id: 'KanbanCard.delete', defaultMessage: 'Delete'})}
+                                name={intl.formatMessage({id: 'BoardCard.delete', defaultMessage: 'Delete'})}
                                 onClick={() => mutator.deleteBlock(card, 'delete card')}
                             />
                             <Menu.Text
                                 icon={<DuplicateIcon/>}
                                 id='duplicate'
-                                name={intl.formatMessage({id: 'KanbanCard.duplicate', defaultMessage: 'Duplicate'})}
+                                name={intl.formatMessage({id: 'BoardCard.duplicate', defaultMessage: 'Duplicate'})}
                                 onClick={() => {
                                     mutator.duplicateCard(card.id)
                                 }}
@@ -111,7 +114,7 @@ class KanbanCard extends React.Component<KanbanCardProps, KanbanCardState> {
 
                 <div className='octo-icontitle'>
                     { card.icon ? <div className='octo-icon'>{card.icon}</div> : undefined }
-                    <div key='__title'>{card.title || intl.formatMessage({id: 'KanbanCard.untitled', defaultMessage: 'Untitled'})}</div>
+                    <div key='__title'>{card.title || intl.formatMessage({id: 'BoardCard.untitled', defaultMessage: 'Untitled'})}</div>
                 </div>
                 {visiblePropertyTemplates.map((template) => (
                     <PropertyValueElement
@@ -129,4 +132,4 @@ class KanbanCard extends React.Component<KanbanCardProps, KanbanCardState> {
     }
 }
 
-export default injectIntl(KanbanCard)
+export default injectIntl(BoardCard)
