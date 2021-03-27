@@ -3,23 +3,25 @@
 import React from 'react'
 import {FormattedMessage} from 'react-intl'
 
-import {Card} from '../blocks/card'
-import {Constants} from '../constants'
-import mutator from '../mutator'
-import {BoardTree} from '../viewModel/boardTree'
-import Button from '../widgets/buttons/button'
-import Editable from '../widgets/editable'
+import {Card} from '../../blocks/card'
+import {Constants} from '../../constants'
+import mutator from '../../mutator'
+import {BoardTree} from '../../viewModel/boardTree'
+import Button from '../../widgets/buttons/button'
+import Editable from '../../widgets/editable'
 
-import PropertyValueElement from './propertyValueElement'
+import PropertyValueElement from '../propertyValueElement'
 import './tableRow.scss'
 
 type Props = {
     boardTree: BoardTree
     card: Card
+    isSelected: boolean
     focusOnMount: boolean
     onSaveWithEnter: () => void
     showCard: (cardId: string) => void
     readonly: boolean
+    onClick?: (e: React.MouseEvent<HTMLDivElement>) => void
 }
 
 type State = {
@@ -49,9 +51,12 @@ class TableRow extends React.Component<Props, State> {
         const {boardTree, card, onSaveWithEnter} = this.props
         const {board, activeView} = boardTree
 
+        const className = this.props.isSelected ? 'TableRow octo-table-row selected' : 'TableRow octo-table-row'
+
         return (
             <div
-                className='TableRow octo-table-row'
+                className={className}
+                onClick={this.props.onClick}
             >
 
                 {/* Name / title */}
@@ -122,4 +127,4 @@ class TableRow extends React.Component<Props, State> {
     }
 }
 
-export {TableRow}
+export default TableRow

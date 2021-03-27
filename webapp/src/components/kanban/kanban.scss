@@ -1,11 +1,4 @@
-.BoardComponent {
-    .octo-board {
-        flex: 0 1 auto;
-
-        display: flex;
-        flex-direction: column;
-    }
-
+.Kanban {
     .octo-board-header {
         display: flex;
         flex-direction: row;

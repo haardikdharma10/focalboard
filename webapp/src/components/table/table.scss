@@ -1,4 +1,4 @@
-.TableComponent {
+.Table {
     .octo-table-cell {
         flex: 0 0 auto;
         display: flex;
@@ -11,6 +11,8 @@
         font-size: 14px;
         line-height: 20px;
         position: relative;
+        overflow: hidden;
+        text-overflow: ellipsis;
 
         &:hover {
             background-color: rgba(var(--body-color), 0.05);
@@ -89,6 +91,10 @@
         .octo-table-cell {
             color: rgba(var(--body-color), 0.6);
 
+            .MenuWrapper {
+                overflow: hidden;
+            }
+
             .octo-label {
                 color: rgba(var(--body-color), 0.6);
             }
@@ -109,5 +115,4 @@
             }
         }
     }
-
 }
