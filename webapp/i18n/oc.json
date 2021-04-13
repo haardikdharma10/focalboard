@@ -1,7 +1,4 @@
 {
-  "BoardCard.delete": "Suprimir",
-  "BoardCard.duplicate": "Duplicar",
-  "BoardCard.untitled": "Sens títol",
   "BoardComponent.add-a-group": "+ Apondre un grop",
   "BoardComponent.delete": "Suprimir",
   "BoardComponent.hidden-columns": "Colomnas rescondudas",
@@ -70,6 +67,7 @@
   "Sidebar.add-board": "+ Apondre un tablèu",
   "Sidebar.add-template": "+ Modèl novèl",
   "Sidebar.changePassword": "Modificar lo senhal",
+  "Sidebar.chinese": "Mandarin",
   "Sidebar.dark-theme": "Tèma escur",
   "Sidebar.default-theme": "Tèma per defaut",
   "Sidebar.delete-board": "Suprimir lo tablèu",
@@ -88,6 +86,7 @@
   "Sidebar.light-theme": "Tèma clar",
   "Sidebar.logout": "Se desconnectar",
   "Sidebar.no-views-in-board": "Cap de pagina pas inclusa",
+  "Sidebar.occitan": "Occitan",
   "Sidebar.russian": "Rus",
   "Sidebar.select-a-template": "Seleccionar un modèl",
   "Sidebar.set-language": "Definir la lenga",
@@ -95,6 +94,7 @@
   "Sidebar.settings": "Paramètres",
   "Sidebar.spanish": "Espanhòl",
   "Sidebar.template-from-board": "Modèl novèl a partir del tablèu",
+  "Sidebar.turkish": "Turc",
   "Sidebar.untitled": "Sens títol",
   "Sidebar.untitled-board": "(Tablèu sens títol)",
   "Sidebar.untitled-view": "(Vista sens títol)",
@@ -115,7 +115,9 @@
   "ViewHeader.delete-template": "Suprimir",
   "ViewHeader.edit-template": "Modificar",
   "ViewHeader.empty-card": "Zòna voida",
+  "ViewHeader.export-complete": "Export acabat !",
   "ViewHeader.export-csv": "Exportar al format CSV",
+  "ViewHeader.export-failed": "Export fracassat !",
   "ViewHeader.filter": "Filtre",
   "ViewHeader.group-by": "Agropar per : {property}",
   "ViewHeader.new": "Novèl",
@@ -131,6 +133,5 @@
   "ViewTitle.random-icon": "Aleatòria",
   "ViewTitle.remove-icon": "Suprimir l'icòna",
   "ViewTitle.show-description": "mostrar la descripcion",
-  "ViewTitle.untitled-board": "Tablèu sens títol",
-  "WorkspaceComponent.editing-board-template": "Sètz a modificar un modèl de tablèu"
+  "ViewTitle.untitled-board": "Tablèu sens títol"
 }

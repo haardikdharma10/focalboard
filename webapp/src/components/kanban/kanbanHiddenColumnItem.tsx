@@ -3,69 +3,58 @@
 /* eslint-disable max-lines */
 import React from 'react'
 import {IntlShape} from 'react-intl'
+import {useDrop} from 'react-dnd'
 
-import {IPropertyOption} from '../../blocks/board'
 import mutator from '../../mutator'
 import {BoardTree, BoardTreeGroup} from '../../viewModel/boardTree'
 import Button from '../../widgets/buttons/button'
 import Menu from '../../widgets/menu'
 import MenuWrapper from '../../widgets/menuWrapper'
 import ShowIcon from '../../widgets/icons/show'
+import Label from '../../widgets/label'
+import {Card} from '../../blocks/card'
 
 type Props = {
     boardTree: BoardTree
     group: BoardTreeGroup
     intl: IntlShape
     readonly: boolean
-    onDropToColumn: (option: IPropertyOption) => void
-    hasDraggedCards: boolean
+    onDrop: (card: Card) => void
 }
 
 export default function KanbanHiddenColumnItem(props: Props): JSX.Element {
     const {boardTree, intl, group} = props
     const {activeView} = boardTree
+    const [{isOver}, drop] = useDrop(() => ({
+        accept: 'card',
+        collect: (monitor) => ({
+            isOver: monitor.isOver(),
+        }),
+        drop: (item: Card) => {
+            props.onDrop(item)
+        },
+    }))
 
-    const ref = React.createRef<HTMLDivElement>()
+    let className = 'octo-board-hidden-item'
+    if (isOver) {
+        className += ' dragover'
+    }
+
     return (
         <div
-            ref={ref}
+            ref={drop}
             key={group.option.id || 'empty'}
-            className='octo-board-hidden-item'
-            onDragOver={(e) => {
-                if (props.hasDraggedCards) {
-                    ref.current?.classList.add('dragover')
-                    e.preventDefault()
-                }
-            }}
-            onDragEnter={(e) => {
-                if (props.hasDraggedCards) {
-                    ref.current?.classList.add('dragover')
-                    e.preventDefault()
-                }
-            }}
-            onDragLeave={(e) => {
-                if (props.hasDraggedCards) {
-                    ref.current?.classList.remove('dragover')
-                    e.preventDefault()
-                }
-            }}
-            onDrop={(e) => {
-                ref.current?.classList.remove('dragover')
-                e.preventDefault()
-                if (props.hasDraggedCards) {
-                    props.onDropToColumn(group.option)
-                }
-            }}
+            className={className}
         >
             <MenuWrapper
                 disabled={props.readonly}
             >
-                <div
+                <Label
                     key={group.option.id || 'empty'}
-                    className={`octo-label ${group.option.color}`}
+                    color={group.option.color}
                 >
                     {group.option.value}
-                </div>
+                </Label>
                 <Menu>
                     <Menu.Text
                         id='show'

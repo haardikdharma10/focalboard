@@ -27,9 +27,18 @@ type Props = {
     addCard: (groupByOptionId?: string) => Promise<void>
 }
 
-class Kanban extends React.Component<Props> {
-    private draggedCards: Card[] = []
-    private draggedHeaderOption?: IPropertyOption
+type State = {
+    draggedCards: Card[]
+    draggedHeaderOption?: IPropertyOption
+}
+
+class Kanban extends React.Component<Props, State> {
+    constructor(props: Props) {
+        super(props)
+        this.state = {
+            draggedCards: [],
+        }
+    }
 
     shouldComponentUpdate(): boolean {
         return true
@@ -69,9 +78,6 @@ class Kanban extends React.Component<Props> {
                             readonly={this.props.readonly}
                             propertyNameChanged={this.propertyNameChanged}
                             onDropToColumn={this.onDropToColumn}
-                            setDraggedHeaderOption={(draggedHeaderOption?: IPropertyOption) => {
-                                this.draggedHeaderOption = draggedHeaderOption
-                            }}
                         />
                     ))}
 
@@ -111,8 +117,7 @@ class Kanban extends React.Component<Props> {
                     {visibleGroups.map((group) => (
                         <KanbanColumn
                             key={group.option.id || 'empty'}
-                            isDropZone={!isManualSort || group.cards.length < 1}
-                            onDrop={() => this.onDropToColumn(group.option)}
+                            onDrop={(card: Card) => this.onDropToColumn(group.option, card)}
                         >
                             {group.cards.map((card) => (
                                 <KanbanCard
@@ -124,21 +129,8 @@ class Kanban extends React.Component<Props> {
                                     onClick={(e) => {
                                         this.props.onCardClicked(e, card)
                                     }}
-                                    onDragStart={() => {
-                                        if (this.props.selectedCardIds.includes(card.id)) {
-                                            this.draggedCards = this.props.selectedCardIds.map((id) => boardTree.allCards.find((o) => o.id === id)!)
-                                        } else {
-                                            this.draggedCards = [card]
-                                        }
-                                    }}
-                                    onDragEnd={() => {
-                                        this.draggedCards = []
-                                    }}
-
-                                    isDropZone={isManualSort}
-                                    onDrop={() => {
-                                        this.onDropToCard(card)
-                                    }}
+                                    onDrop={this.onDropToCard}
+                                    isManualSort={isManualSort}
                                 />
                             ))}
                             {!this.props.readonly &&
@@ -167,8 +159,7 @@ class Kanban extends React.Component<Props> {
                                     boardTree={boardTree}
                                     intl={this.props.intl}
                                     readonly={this.props.readonly}
-                                    onDropToColumn={this.onDropToColumn}
-                                    hasDraggedCards={this.draggedCards.length > 0}
+                                    onDrop={(card: Card) => this.onDropToColumn(group.option, card)}
                                 />
                             ))}
                         </div>}
@@ -177,7 +168,7 @@ class Kanban extends React.Component<Props> {
         )
     }
 
-    private async propertyNameChanged(option: IPropertyOption, text: string): Promise<void> {
+    private propertyNameChanged = async (option: IPropertyOption, text: string): Promise<void> => {
         const {boardTree} = this.props
 
         await mutator.changePropertyOptionValue(boardTree, boardTree.groupByProperty!, option, text)
@@ -197,14 +188,24 @@ class Kanban extends React.Component<Props> {
         await mutator.insertPropertyOption(boardTree, boardTree.groupByProperty!, option, 'add group')
     }
 
-    private onDropToColumn = async (option: IPropertyOption) => {
-        const {boardTree} = this.props
-        const {draggedCards, draggedHeaderOption} = this
+    private onDropToColumn = async (option: IPropertyOption, card?: Card, dstOption?: IPropertyOption) => {
+        const {boardTree, selectedCardIds} = this.props
         const optionId = option ? option.id : undefined
+
+        let draggedCardIds = selectedCardIds
+        if (card) {
+            draggedCardIds = Array.from(new Set(selectedCardIds).add(card.id))
+        }
 
         Utils.assertValue(boardTree)
 
-        if (draggedCards.length > 0) {
+        if (draggedCardIds.length > 0) {
+            const orderedCards = boardTree.orderedCards()
+            const cardsById: {[key: string]: Card} = orderedCards.reduce((acc: {[key: string]: Card}, c: Card): {[key: string]: Card} => {
+                acc[c.id] = c
+                return acc
+            }, {})
+            const draggedCards: Card[] = draggedCardIds.map((o: string) => cardsById[o])
             await mutator.performAsUndoGroup(async () => {
                 const description = draggedCards.length > 1 ? `drag ${draggedCards.length} cards` : 'drag card'
                 const awaits = []
@@ -217,14 +218,14 @@ class Kanban extends React.Component<Props> {
                 }
                 await Promise.all(awaits)
             })
-        } else if (draggedHeaderOption) {
-            Utils.log(`ondrop. Header option: ${draggedHeaderOption.value}, column: ${option?.value}`)
+        } else if (dstOption) {
+            Utils.log(`ondrop. Header option: ${dstOption.value}, column: ${option?.value}`)
 
             // Move option to new index
             const visibleOptionIds = boardTree.visibleGroups.map((o) => o.option.id)
 
             const {activeView} = boardTree
-            const srcIndex = visibleOptionIds.indexOf(draggedHeaderOption.id)
+            const srcIndex = visibleOptionIds.indexOf(dstOption.id)
             const destIndex = visibleOptionIds.indexOf(option.id)
 
             visibleOptionIds.splice(destIndex, 0, visibleOptionIds.splice(srcIndex, 1)[0])
@@ -233,28 +234,29 @@ class Kanban extends React.Component<Props> {
         }
     }
 
-    private async onDropToCard(card: Card) {
-        Utils.log(`onDropToCard: ${card.title}`)
-        const {boardTree} = this.props
+    private onDropToCard = async (srcCard: Card, dstCard: Card) => {
+        Utils.log(`onDropToCard: ${dstCard.title}`)
+        const {boardTree, selectedCardIds} = this.props
         const {activeView} = boardTree
-        const {draggedCards} = this
-        const optionId = card.properties[activeView.groupById!]
+        const optionId = dstCard.properties[activeView.groupById!]
 
-        if (draggedCards.length < 1 || draggedCards.includes(card)) {
-            return
-        }
+        const draggedCardIds = Array.from(new Set(selectedCardIds).add(srcCard.id))
 
-        const description = draggedCards.length > 1 ? `drag ${draggedCards.length} cards` : 'drag card'
+        const description = draggedCardIds.length > 1 ? `drag ${draggedCardIds.length} cards` : 'drag card'
 
-        // Update card order
-        let cardOrder = boardTree.orderedCards().map((o) => o.id)
-        const draggedCardIds = draggedCards.map((o) => o.id)
-        const firstDraggedCard = draggedCards[0]
-        const isDraggingDown = cardOrder.indexOf(firstDraggedCard.id) <= cardOrder.indexOf(card.id)
+        // Update dstCard order
+        const orderedCards = boardTree.orderedCards()
+        const cardsById: {[key: string]: Card} = orderedCards.reduce((acc: {[key: string]: Card}, card: Card): {[key: string]: Card} => {
+            acc[card.id] = card
+            return acc
+        }, {})
+        const draggedCards: Card[] = draggedCardIds.map((o: string) => cardsById[o])
+        let cardOrder = orderedCards.map((o) => o.id)
+        const isDraggingDown = cardOrder.indexOf(srcCard.id) <= cardOrder.indexOf(dstCard.id)
         cardOrder = cardOrder.filter((id) => !draggedCardIds.includes(id))
-        let destIndex = cardOrder.indexOf(card.id)
-        if (firstDraggedCard.properties[boardTree.groupByProperty!.id] === optionId && isDraggingDown) {
-            // If the cards are in the same column and dragging down, drop after the target card
+        let destIndex = cardOrder.indexOf(dstCard.id)
+        if (srcCard.properties[boardTree.groupByProperty!.id] === optionId && isDraggingDown) {
+            // If the cards are in the same column and dragging down, drop after the target dstCard
             destIndex += 1
         }
         cardOrder.splice(destIndex, 0, ...draggedCardIds)

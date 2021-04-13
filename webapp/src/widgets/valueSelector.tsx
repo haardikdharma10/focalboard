@@ -14,6 +14,7 @@ import MenuWrapper from './menuWrapper'
 import IconButton from './buttons/iconButton'
 import OptionsIcon from './icons/options'
 import DeleteIcon from './icons/delete'
+import Label from './label'
 
 import './valueSelector.scss'
 
@@ -39,12 +40,12 @@ type LabelProps = {
 const ValueSelectorLabel = React.memo((props: LabelProps): JSX.Element => {
     const {option, meta} = props
     if (meta.context === 'value') {
-        return <span className={`octo-label ${option.color}`} >{option.value}</span>
+        return <Label color={option.color}>{option.value}</Label>
     }
     return (
         <div className='value-menu-option'>
-            <div className='octo-label-container'>
-                <div className={`octo-label ${option.color}`}>{option.value}</div>
+            <div className='label-container'>
+                <Label color={option.color}>{option.value}</Label>
             </div>
             <MenuWrapper stopPropagationOnToggle={true}>
                 <IconButton icon={<OptionsIcon/>}/>
@@ -79,9 +80,9 @@ function ValueSelector(props: Props): JSX.Element {
                 className='ValueSelector'
                 onClick={() => setActivated(true)}
             >
-                <span className={`octo-label ${props.value ? props.value.color : 'empty'}`}>
+                <Label color={props.value ? props.value.color : 'empty'}>
                     {props.value ? props.value.value : props.emptyValue}
-                </span>
+                </Label>
             </div>
         )
     }
@@ -106,14 +107,19 @@ function ValueSelector(props: Props): JSX.Element {
                 }),
                 control: (): CSSObject => ({
                     border: 0,
+                    width: '100%',
+                    margin: '4px 0 0 0',
                 }),
                 valueContainer: (provided: CSSObject): CSSObject => ({
                     ...provided,
                     padding: '0 8px',
+                    overflow: 'unset',
                 }),
                 singleValue: (provided: CSSObject): CSSObject => ({
                     ...provided,
                     color: 'rgb(var(--main-fg))',
+                    overflow: 'unset',
+                    maxWidth: 'calc(100% - 20px)',
                 }),
                 input: (provided: CSSObject): CSSObject => ({
                     ...provided,

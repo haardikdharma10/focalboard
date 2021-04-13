@@ -3,6 +3,7 @@
 /* eslint-disable max-lines */
 import React from 'react'
 import {injectIntl, IntlShape} from 'react-intl'
+import Hotkeys from 'react-hot-keys'
 
 import {BlockIcons} from '../blockIcons'
 import {Card, MutableCard} from '../blocks/card'
@@ -15,10 +16,11 @@ import './centerPanel.scss'
 import CardDialog from './cardDialog'
 import RootPortal from './rootPortal'
 import TopBar from './topBar'
-import ViewHeader from './viewHeader'
+import ViewHeader from './viewHeader/viewHeader'
 import ViewTitle from './viewTitle'
 import Kanban from './kanban/kanban'
 import Table from './table/table'
+import Gallery from './gallery/gallery'
 
 type Props = {
     boardTree: BoardTree
@@ -37,32 +39,37 @@ type State = {
 class CenterPanel extends React.Component<Props, State> {
     private backgroundRef = React.createRef<HTMLDivElement>()
 
-    private keydownHandler = (e: KeyboardEvent) => {
-        if (e.target !== document.body) {
+    private keydownHandler = (keyName: string, e: KeyboardEvent) => {
+        if (e.target !== document.body || this.props.readonly) {
             return
         }
 
-        if (e.keyCode === 27) {
+        if (keyName === 'esc') {
             if (this.state.selectedCardIds.length > 0) {
                 this.setState({selectedCardIds: []})
                 e.stopPropagation()
             }
         }
 
-        if (e.keyCode === 8 || e.keyCode === 46) {
-            // Backspace or Del: Delete selected cards
-            this.deleteSelectedCards()
-            e.stopPropagation()
+        if (this.state.selectedCardIds.length > 0) {
+            if (keyName === 'del' || keyName === 'backspace') {
+                // Backspace or Del: Delete selected cards
+                this.deleteSelectedCards()
+                e.stopPropagation()
+            }
+
+            // TODO: Might need a different hotkey, as Cmd+D is save bookmark on Chrome
+            if (keyName === 'ctrl+d') {
+                // CTRL+D: Duplicate selected cards
+                this.duplicateSelectedCards()
+                e.stopPropagation()
+                e.preventDefault()
+            }
         }
     }
 
     componentDidMount(): void {
         this.showCardInUrl()
-        document.addEventListener('keydown', this.keydownHandler)
-    }
-
-    componentWillUnmount(): void {
-        document.removeEventListener('keydown', this.keydownHandler)
     }
 
     constructor(props: Props) {
@@ -105,6 +112,10 @@ class CenterPanel extends React.Component<Props, State> {
                     this.backgroundClicked(e)
                 }}
             >
+                <Hotkeys
+                    keyName='ctrl+d,del,esc,backspace'
+                    onKeyDown={this.keydownHandler}
+                />
                 {this.state.shownCardId &&
                 <RootPortal>
                     <CardDialog
@@ -134,7 +145,6 @@ class CenterPanel extends React.Component<Props, State> {
                             addCardFromTemplate={this.addCardFromTemplate}
                             addCardTemplate={this.addCardTemplate}
                             editCardTemplate={this.editCardTemplate}
-                            withGroupBy={activeView.viewType === 'board'}
                             readonly={this.props.readonly}
                         />
                         {activeView.viewType === 'board' &&
@@ -154,6 +164,14 @@ class CenterPanel extends React.Component<Props, State> {
                                 showCard={this.showCard}
                                 addCard={(show) => this.addCard('', show)}
                                 onCardClicked={this.cardClicked}
+                            />}
+                        {activeView.viewType === 'gallery' &&
+                            <Gallery
+                                boardTree={boardTree}
+                                readonly={this.props.readonly}
+                                onCardClicked={this.cardClicked}
+                                selectedCardIds={this.state.selectedCardIds}
+                                addCard={(show) => this.addCard('', show)}
                             />}
                     </div>
                 </div>
@@ -270,7 +288,7 @@ class CenterPanel extends React.Component<Props, State> {
                 }
                 this.setState({selectedCardIds})
             }
-        } else if (activeView.viewType === 'board') {
+        } else if (activeView.viewType === 'board' || activeView.viewType === 'gallery') {
             this.showCard(card.id)
         }
 
@@ -293,6 +311,26 @@ class CenterPanel extends React.Component<Props, State> {
                 const card = this.props.boardTree.allCards.find((o) => o.id === cardId)
                 if (card) {
                     mutator.deleteBlock(card, selectedCardIds.length > 1 ? `delete ${selectedCardIds.length} cards` : 'delete card')
+                } else {
+                    Utils.assertFailure(`Selected card not found: ${cardId}`)
+                }
+            }
+        })
+
+        this.setState({selectedCardIds: []})
+    }
+
+    private async duplicateSelectedCards() {
+        const {selectedCardIds} = this.state
+        if (selectedCardIds.length < 1) {
+            return
+        }
+
+        mutator.performAsUndoGroup(async () => {
+            for (const cardId of selectedCardIds) {
+                const card = this.props.boardTree.allCards.find((o) => o.id === cardId)
+                if (card) {
+                    mutator.duplicateCard(cardId)
                 } else {
                     Utils.assertFailure(`Selected card not found: ${cardId}`)
                 }
